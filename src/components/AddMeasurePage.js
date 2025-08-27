@@ -414,9 +414,12 @@ const AddMeasurePage = ({ planId, onNavigateBack }) => {
                 alignItems: 'center',
                 marginBottom: 12
               }}>
-                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1890ff' }}>
-                  📦 选择关联的私有云采购单
-                </div>
+                 <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1890ff' }}>
+                   📦 选择关联的私有云采购单
+                   <span style={{ fontSize: '12px', color: '#666', fontWeight: 'normal', marginLeft: '8px' }}>
+                     （仅显示状态为"在途"的采购单）
+                   </span>
+                 </div>
                 <Space>
                   <Button
                     size="small"
@@ -431,28 +434,28 @@ const AddMeasurePage = ({ planId, onNavigateBack }) => {
                 </Space>
               </div>
 
-              <div style={{
-                border: '1px solid #d9d9d9',
-                borderRadius: '6px',
-                padding: '16px',
-                backgroundColor: '#fafafa'
-              }}>
-                <Table
-                  columns={procurementSelectionColumns}
-                  dataSource={procurementData}
-                  rowKey="id"
-                  size="small"
-                  pagination={false}
-                  scroll={{ y: 300 }}
-                  rowSelection={{
-                    type: 'checkbox',
-                    selectedRowKeys: selectedProcurementIds,
-                    onChange: handleProcurementSelection,
-                    getCheckboxProps: (record) => ({
-                      name: record.procurementId,
-                    }),
-                  }}
-                />
+               <div style={{
+                 border: '1px solid #d9d9d9',
+                 borderRadius: '6px',
+                 padding: '16px',
+                 backgroundColor: '#fafafa'
+               }}>
+                 <Table
+                   columns={procurementSelectionColumns}
+                   dataSource={procurementData.filter(item => item.status === '在途')}
+                   rowKey="id"
+                   size="small"
+                   pagination={false}
+                   scroll={{ y: 300 }}
+                   rowSelection={{
+                     type: 'checkbox',
+                     selectedRowKeys: selectedProcurementIds,
+                     onChange: handleProcurementSelection,
+                     getCheckboxProps: (record) => ({
+                       name: record.procurementId,
+                     }),
+                   }}
+                 />
               </div>
 
               {selectedProcurementIds.length > 0 && (
