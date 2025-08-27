@@ -1562,46 +1562,33 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasu
                 <div>
                   {/* 统计卡片 */}
                   <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                    <Col xs={24} sm={12} md={6}>
+                    <Col xs={24} sm={12} md={8}>
                       <Card size="small">
                         <Statistic
-                          title="总采购数量"
-                          value={procurementData.reduce((sum, item) => sum + item.quantity, 0)}
-                          suffix="台"
-                          valueStyle={{ color: '#1890ff' }}
+                          title="总物理机台数/总CPU核数"
+                          value={`${procurementData.reduce((sum, item) => sum + item.quantity, 0)}台 / ${procurementData.reduce((sum, item) => sum + (item.cpuCores * item.quantity), 0)}核`}
+                          valueStyle={{ color: '#1890ff', fontSize: '16px' }}
                         />
                       </Card>
                     </Col>
-                    <Col xs={24} sm={12} md={6}>
+                    <Col xs={24} sm={12} md={8}>
                       <Card size="small">
                         <Statistic
-                          title="总CPU核数"
-                          value={procurementData.reduce((sum, item) => sum + (item.cpuCores * item.quantity), 0)}
-                          suffix="核"
-                          valueStyle={{ color: '#52c41a' }}
+                          title="已到货物理机台数/已到货CPU核数"
+                          value={`${procurementData.filter(item => item.status === '已到货').reduce((sum, item) => sum + item.quantity, 0)}台 / ${procurementData.filter(item => item.status === '已到货').reduce((sum, item) => sum + (item.cpuCores * item.quantity), 0)}核`}
+                          valueStyle={{ color: '#52c41a', fontSize: '16px' }}
                         />
                       </Card>
                     </Col>
-                    <Col xs={24} sm={12} md={6}>
+                    <Col xs={24} sm={12} md={8}>
                       <Card size="small">
                         <Statistic
-                          title="已到货"
-                          value={procurementData.filter(item => item.status === '已到货').length}
-                          suffix="批次"
-                          valueStyle={{ color: '#52c41a' }}
+                          title="在途物理机台数/在途CPU核数"
+                          value={`${procurementData.filter(item => item.status === '在途').reduce((sum, item) => sum + item.quantity, 0)}台 / ${procurementData.filter(item => item.status === '在途').reduce((sum, item) => sum + (item.cpuCores * item.quantity), 0)}核`}
+                          valueStyle={{ color: '#faad14', fontSize: '16px' }}
                         />
                       </Card>
                     </Col>
-                     <Col xs={24} sm={12} md={6}>
-                       <Card size="small">
-                         <Statistic
-                           title="在途"
-                           value={procurementData.filter(item => item.status === '在途').length}
-                           suffix="批次"
-                           valueStyle={{ color: '#faad14' }}
-                         />
-                       </Card>
-                     </Col>
                   </Row>
 
                   {/* 筛选面板 */}
