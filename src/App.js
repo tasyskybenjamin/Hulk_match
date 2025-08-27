@@ -21,6 +21,7 @@ import InventoryDemandChart from './components/InventoryDemandChart';
 import FulfilledChart from './components/FulfilledChart';
 import ResourceGapChart from './components/ResourceGapChart';
 import ResourceProcurementPage from './components/ResourceProcurementPage';
+import AddMeasurePage from './components/AddMeasurePage';
 import DemandManagementPage from './components/DemandManagementPage';
 import InventoryManagementPage from './components/InventoryManagementPage';
 import SupplyDemandMatchingPage from './components/SupplyDemandMatchingPage';
@@ -245,7 +246,14 @@ function App() {
               }}
             />
           ) : selectedKey === 'resource-procurement' ? (
-            <ResourceProcurementPage />
+            <ResourceProcurementPage
+              onNavigateToAddMeasure={(planId) => setSelectedKey(`add-measure-${planId}`)}
+            />
+          ) : selectedKey.startsWith('add-measure-') ? (
+            <AddMeasurePage
+              planId={selectedKey.replace('add-measure-', '')}
+              onNavigateBack={() => setSelectedKey('resource-procurement')}
+            />
           ) : selectedKey === 'demand-management' ? (
             <DemandManagementPage />
           ) : selectedKey === 'inventory-management' ? (

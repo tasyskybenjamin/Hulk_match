@@ -23,16 +23,13 @@ import {
   ArrowLeftOutlined,
   CloudServerOutlined
 } from '@ant-design/icons';
-import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import './ResourceProcurementPage.css';
 
 const { Option } = Select;
 const { TextArea } = Input;
 
-const AddMeasurePage = () => {
-  const navigate = useNavigate();
-  const { planId } = useParams();
+const AddMeasurePage = ({ planId, onNavigateBack }) => {
   const [measureForm] = Form.useForm();
 
   // 私有云提拉相关状态
@@ -304,7 +301,9 @@ const AddMeasurePage = () => {
       });
 
       message.success('筹措举措添加成功！');
-      navigate('/resource-procurement');
+      if (onNavigateBack) {
+        onNavigateBack();
+      }
     } catch (error) {
       console.error('表单验证失败:', error);
     }
@@ -312,7 +311,9 @@ const AddMeasurePage = () => {
 
   // 返回列表页
   const handleGoBack = () => {
-    navigate('/resource-procurement');
+    if (onNavigateBack) {
+      onNavigateBack();
+    }
   };
 
   return (

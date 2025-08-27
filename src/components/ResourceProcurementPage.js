@@ -34,15 +34,13 @@ import {
   ExportOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import './ResourceProcurementPage.css';
 
 const { Option } = Select;
 const { TextArea } = Input;
 
-const ResourceProcurementPage = () => {
-  const navigate = useNavigate();
+const ResourceProcurementPage = ({ onNavigateToAddMeasure }) => {
   const [createPlanModalVisible, setCreatePlanModalVisible] = useState(false);
   const [editPlanModalVisible, setEditPlanModalVisible] = useState(false);
   const [editMeasureModalVisible, setEditMeasureModalVisible] = useState(false);
@@ -814,7 +812,9 @@ const ResourceProcurementPage = () => {
 
   // 添加筹措举措
   const handleAddMeasure = (plan) => {
-    navigate(`/resource-procurement/add-measure/${plan.id}`);
+    if (onNavigateToAddMeasure) {
+      onNavigateToAddMeasure(plan.id);
+    }
   };
 
 
