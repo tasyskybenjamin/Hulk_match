@@ -144,7 +144,7 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasu
       measures: [
         {
           id: '2-1',
-          type: '私有云到货',
+          type: '私有云提拉',
           name: '春节大促资源储备',
           timePoints: [
             {
@@ -221,7 +221,6 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasu
   // 筹措类型选项
   const measureTypes = [
     { value: '私有云提拉', label: '私有云提拉', color: 'blue' },
-    { value: '私有云到货', label: '私有云到货', color: 'green' },
     { value: '私有云借调', label: '私有云借调', color: 'purple' },
     { value: '公有云采购', label: '公有云采购', color: 'orange' },
     { value: 'PaaS借调', label: 'PaaS借调', color: 'geekblue' },
