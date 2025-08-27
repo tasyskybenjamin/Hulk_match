@@ -63,6 +63,10 @@ const ResourceProcurementPage = () => {
   });
   const [procurementLoading, setProcurementLoading] = useState(false);
 
+  // 新增：私有云提拉相关状态
+  const [selectedProcurementIds, setSelectedProcurementIds] = useState([]);
+  const [procurementTableVisible, setProcurementTableVisible] = useState(false);
+
   const [planForm] = Form.useForm();
   const [editPlanForm] = Form.useForm();
   const [measureForm] = Form.useForm();
@@ -813,6 +817,9 @@ const ResourceProcurementPage = () => {
     setCurrentPlanId(plan.id);
     setAddMeasureModalVisible(true);
     measureForm.resetFields();
+    // 重置私有云提拉相关状态
+    setSelectedProcurementIds([]);
+    setProcurementTableVisible(false);
   };
 
   const handleAddMeasureSubmit = async () => {
@@ -1187,6 +1194,171 @@ const ResourceProcurementPage = () => {
 
     return filtered;
   };
+
+  // 私有云提拉相关处理函数
+  // 处理筹措类型变化
+  const handleMeasureTypeChange = (value) => {
+    if (value === '私有云提拉') {
+      setProcurementTableVisible(true);
+    } else {
+      setProcurementTableVisible(false);
+      setSelectedProcurementIds([]);
+      // 清空相关字段
+      measureForm.setFieldsValue({
+        expectedAmount: undefined
+      });
+    }
+  };
+
+  // 处理采购单选择
+  const handleProcurementSelection = (selectedRowKeys, selectedRows) => {
+    setSelectedProcurementIds(selectedRowKeys);
+
+    // 自动计算预计筹备资源量级
+    const totalAmount = selectedRows.reduce((sum, item) => {
+      // 计算公式：机器数量 * 套餐内的 CPU 核数 * 2.5 * 0.77
+      return sum + (item.quantity * item.cpuCores * 2.5 * 0.77);
+    }, 0);
+
+    // 更新表单中的预计资源筹备量级
+    measureForm.setFieldsValue({
+      expectedAmount: Math.round(totalAmount)
+    });
+  };
+
+  // 统一修改采购到货时间
+  const handleBatchUpdateArrivalTime = () => {
+    const expectedTime = measureForm.getFieldValue('expectedTime');
+    if (!expectedTime) {
+      message.warning('请先选择预计资源到位时间！');
+      return;
+    }
+
+    if (selectedProcurementIds.length === 0) {
+      message.warning('请先选择采购单！');
+      return;
+    }
+
+    const newArrivalTime = expectedTime.format('YYYY-MM-DD HH:mm');
+
+    // 更新选中采购单的到货时间
+    setProcurementData(prev =>
+      prev.map(item =>
+        selectedProcurementIds.includes(item.id)
+          ? { ...item, arrivalTime: newArrivalTime }
+          : item
+      )
+    );
+
+    message.success(`已将 ${selectedProcurementIds.length} 个采购单的到货时间更新为：${newArrivalTime}`);
+  };
+
+  // 私有云采购单选择表格列配置
+  const procurementSelectionColumns = [
+    {
+      title: '套餐',
+      dataIndex: 'package',
+      key: 'package',
+      width: 120,
+      render: (text) => (
+        <Tag color="blue" style={{ fontFamily: 'monospace', fontSize: '11px' }}>
+          {text}
+        </Tag>
+      )
+    },
+    {
+      title: 'Type',
+      dataIndex: 'type',
+      key: 'type',
+      width: 80,
+      render: (text) => (
+        <Tag color={
+          text === '通用型' ? 'default' :
+          text === '计算型' ? 'processing' :
+          text === '内存型' ? 'success' :
+          text === '存储型' ? 'warning' : 'purple'
+        } size="small">
+          {text}
+        </Tag>
+      )
+    },
+    {
+      title: 'CPU核数',
+      dataIndex: 'cpuCores',
+      key: 'cpuCores',
+      width: 80,
+      render: (value) => (
+        <span style={{ fontWeight: 'bold', color: '#1890ff', fontSize: '12px' }}>
+          {value}核
+        </span>
+      )
+    },
+    {
+      title: '数量',
+      dataIndex: 'quantity',
+      key: 'quantity',
+      width: 60,
+      render: (value) => (
+        <span style={{ fontWeight: 'bold', color: '#52c41a', fontSize: '12px' }}>
+          {value}台
+        </span>
+      )
+    },
+    {
+      title: '地域',
+      dataIndex: 'region',
+      key: 'region',
+      width: 60,
+      render: (text) => (
+        <Tag color="geekblue" size="small">{text}</Tag>
+      )
+    },
+    {
+      title: '机房',
+      dataIndex: 'datacenter',
+      key: 'datacenter',
+      width: 80,
+      render: (text) => (
+        <Tag color="cyan" size="small">{text}</Tag>
+      )
+    },
+    {
+      title: '采购标识',
+      dataIndex: 'procurementId',
+      key: 'procurementId',
+      width: 120,
+      render: (text, record) => (
+        <div>
+          <div style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '11px' }}>
+            {text}
+          </div>
+          <div style={{ fontSize: '10px', color: '#666', marginTop: '1px' }}>
+            {record.source}
+          </div>
+        </div>
+      )
+    },
+    {
+      title: '到货时间',
+      dataIndex: 'arrivalTime',
+      key: 'arrivalTime',
+      width: 140,
+      render: (time, record) => (
+        <div>
+          <div style={{ fontSize: '11px', fontWeight: 'bold' }}>
+            {time}
+          </div>
+          <div style={{ marginTop: '1px' }}>
+            <Tag color={
+              record.status === '已到货' ? 'success' : 'processing'
+            } size="small">
+              {record.status}
+            </Tag>
+          </div>
+        </div>
+      )
+    }
+  ];
 
   return (
     <div className="resource-procurement-page" style={{ padding: '24px' }}>
@@ -1605,7 +1777,7 @@ const ResourceProcurementPage = () => {
                 label="筹措类型"
                 rules={[{ required: true, message: '请选择筹措类型' }]}
               >
-                <Select>
+                <Select onChange={handleMeasureTypeChange}>
                   {measureTypes.map(type => (
                     <Option key={type.value} value={type.value}>
                       {type.label}
@@ -1631,6 +1803,77 @@ const ResourceProcurementPage = () => {
               </Form.Item>
             </Col>
           </Row>
+
+          {/* 私有云提拉时显示采购单选择 */}
+          {procurementTableVisible && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 12
+              }}>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#1890ff' }}>
+                  📦 选择关联的私有云采购单
+                </div>
+                <Space>
+                  <Button
+                    size="small"
+                    onClick={handleBatchUpdateArrivalTime}
+                    disabled={selectedProcurementIds.length === 0}
+                  >
+                    统一修改到货时间
+                  </Button>
+                  <span style={{ fontSize: '12px', color: '#666' }}>
+                    已选择 {selectedProcurementIds.length} 个采购单
+                  </span>
+                </Space>
+              </div>
+
+              <div style={{
+                border: '1px solid #d9d9d9',
+                borderRadius: '6px',
+                padding: '12px',
+                backgroundColor: '#fafafa'
+              }}>
+                <Table
+                  columns={procurementSelectionColumns}
+                  dataSource={procurementData}
+                  rowKey="id"
+                  size="small"
+                  pagination={false}
+                  scroll={{ y: 300 }}
+                  rowSelection={{
+                    type: 'checkbox',
+                    selectedRowKeys: selectedProcurementIds,
+                    onChange: handleProcurementSelection,
+                    getCheckboxProps: (record) => ({
+                      name: record.procurementId,
+                    }),
+                  }}
+                />
+              </div>
+
+              {selectedProcurementIds.length > 0 && (
+                <div style={{
+                  marginTop: 8,
+                  padding: '8px 12px',
+                  backgroundColor: '#e6f7ff',
+                  border: '1px solid #91d5ff',
+                  borderRadius: '4px',
+                  fontSize: '12px'
+                }}>
+                  <div style={{ color: '#1890ff', fontWeight: 'bold', marginBottom: '4px' }}>
+                    📊 自动计算结果：
+                  </div>
+                  <div style={{ color: '#666' }}>
+                    计算公式：机器数量 × CPU核数 × 2.5 × 0.77 = 预计筹备资源量级
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <Form.Item
             name="name"
             label="筹备举措名称"
