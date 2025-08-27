@@ -22,6 +22,7 @@ import FulfilledChart from './components/FulfilledChart';
 import ResourceGapChart from './components/ResourceGapChart';
 import ResourceProcurementPage from './components/ResourceProcurementPage';
 import AddMeasurePage from './components/AddMeasurePage';
+import EditMeasurePage from './components/EditMeasurePage';
 import DemandManagementPage from './components/DemandManagementPage';
 import InventoryManagementPage from './components/InventoryManagementPage';
 import SupplyDemandMatchingPage from './components/SupplyDemandMatchingPage';
@@ -248,10 +249,17 @@ function App() {
           ) : selectedKey === 'resource-procurement' ? (
             <ResourceProcurementPage
               onNavigateToAddMeasure={(planId) => setSelectedKey(`add-measure-${planId}`)}
+              onNavigateToEditMeasure={(measureId, planId) => setSelectedKey(`edit-measure-${measureId}-${planId}`)}
             />
           ) : selectedKey.startsWith('add-measure-') ? (
             <AddMeasurePage
               planId={selectedKey.replace('add-measure-', '')}
+              onNavigateBack={() => setSelectedKey('resource-procurement')}
+            />
+          ) : selectedKey.startsWith('edit-measure-') ? (
+            <EditMeasurePage
+              measureId={selectedKey.split('-')[2]}
+              planId={selectedKey.split('-')[3]}
               onNavigateBack={() => setSelectedKey('resource-procurement')}
             />
           ) : selectedKey === 'demand-management' ? (
