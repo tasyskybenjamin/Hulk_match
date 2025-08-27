@@ -43,11 +43,9 @@ const { TextArea } = Input;
 const ResourceProcurementPage = () => {
   const [createPlanModalVisible, setCreatePlanModalVisible] = useState(false);
   const [editPlanModalVisible, setEditPlanModalVisible] = useState(false);
-  const [addMeasureModalVisible, setAddMeasureModalVisible] = useState(false);
   const [editMeasureModalVisible, setEditMeasureModalVisible] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
   const [editingMeasure, setEditingMeasure] = useState(null);
-  const [currentPlanId, setCurrentPlanId] = useState(null);
   const [expandedRowKeys, setExpandedRowKeys] = useState([]);
 
   // 新增：Tab 相关状态
@@ -812,52 +810,13 @@ const ResourceProcurementPage = () => {
     }
   };
 
-  // 添加筹措举措
+  // 添加筹措举措 - 跳转到新页面
   const handleAddMeasure = (plan) => {
-    setCurrentPlanId(plan.id);
-    setAddMeasureModalVisible(true);
-    measureForm.resetFields();
-    // 重置私有云提拉相关状态
-    setSelectedProcurementIds([]);
-    setProcurementTableVisible(false);
+    // 使用 window.open 或者路由跳转到新页面
+    // 这里假设使用路由跳转，需要在路由配置中添加对应路由
+    window.open(`/add-measure?planId=${plan.id}`, '_blank');
   };
 
-  const handleAddMeasureSubmit = async () => {
-    try {
-      const values = await measureForm.validateFields();
-
-       const newMeasure = {
-         id: `${currentPlanId}-${Date.now()}`,
-         type: values.type,
-         name: values.name,
-         timePoints: [
-           {
-             expectedTime: values.expectedTime.format('YYYY-MM-DD HH:mm'),
-             expectedAmount: values.expectedAmount,
-             actualTime: values.actualTime ? values.actualTime.format('YYYY-MM-DD HH:mm') : '',
-             actualAmount: values.actualAmount || 0
-           }
-         ],
-         status: values.status,
-         description: values.description
-       };
-
-      setProcurementPlans(prev =>
-        prev.map(plan =>
-          plan.id === currentPlanId
-            ? { ...plan, measures: [...plan.measures, newMeasure] }
-            : plan
-        )
-      );
-
-      message.success('筹措举措添加成功！');
-      setAddMeasureModalVisible(false);
-      setCurrentPlanId(null);
-      measureForm.resetFields();
-    } catch (error) {
-      console.error('表单验证失败:', error);
-    }
-  };
 
   // 修改筹措举措
   const handleEditMeasure = (measure) => {
@@ -1759,204 +1718,6 @@ const ResourceProcurementPage = () => {
         </Form>
       </Modal>
 
-      {/* 添加筹措举措Modal */}
-      <Modal
-        title="添加筹措举措"
-        open={addMeasureModalVisible}
-        onOk={handleAddMeasureSubmit}
-        onCancel={() => setAddMeasureModalVisible(false)}
-        width={600}
-        okText="添加"
-        cancelText="取消"
-      >
-        <Form form={measureForm} layout="vertical" style={{ marginTop: 16 }}>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="type"
-                label="筹措类型"
-                rules={[{ required: true, message: '请选择筹措类型' }]}
-              >
-                <Select onChange={handleMeasureTypeChange}>
-                  {measureTypes.map(type => (
-                    <Option key={type.value} value={type.value}>
-                      {type.label}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="status"
-                label="状态"
-                rules={[{ required: true, message: '请选择状态' }]}
-                initialValue="处理中"
-              >
-                <Select>
-                  {measureStatusOptions.map(status => (
-                    <Option key={status.value} value={status.value}>
-                      {status.label}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* 私有云提拉时显示采购单选择 */}
-          {procurementTableVisible && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 12
-              }}>
-                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#1890ff' }}>
-                  📦 选择关联的私有云采购单
-                </div>
-                <Space>
-                  <Button
-                    size="small"
-                    onClick={handleBatchUpdateArrivalTime}
-                    disabled={selectedProcurementIds.length === 0}
-                  >
-                    统一修改到货时间
-                  </Button>
-                  <span style={{ fontSize: '12px', color: '#666' }}>
-                    已选择 {selectedProcurementIds.length} 个采购单
-                  </span>
-                </Space>
-              </div>
-
-              <div style={{
-                border: '1px solid #d9d9d9',
-                borderRadius: '6px',
-                padding: '12px',
-                backgroundColor: '#fafafa'
-              }}>
-                <Table
-                  columns={procurementSelectionColumns}
-                  dataSource={procurementData}
-                  rowKey="id"
-                  size="small"
-                  pagination={false}
-                  scroll={{ y: 300 }}
-                  rowSelection={{
-                    type: 'checkbox',
-                    selectedRowKeys: selectedProcurementIds,
-                    onChange: handleProcurementSelection,
-                    getCheckboxProps: (record) => ({
-                      name: record.procurementId,
-                    }),
-                  }}
-                />
-              </div>
-
-              {selectedProcurementIds.length > 0 && (
-                <div style={{
-                  marginTop: 8,
-                  padding: '8px 12px',
-                  backgroundColor: '#e6f7ff',
-                  border: '1px solid #91d5ff',
-                  borderRadius: '4px',
-                  fontSize: '12px'
-                }}>
-                  <div style={{ color: '#1890ff', fontWeight: 'bold', marginBottom: '4px' }}>
-                    📊 自动计算结果：
-                  </div>
-                  <div style={{ color: '#666' }}>
-                    计算公式：机器数量 × CPU核数 × 2.5 × 0.77 = 预计筹备资源量级
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <Form.Item
-            name="name"
-            label="筹备举措名称"
-            rules={[
-              { required: true, message: '请输入举措名称' },
-              { max: 20, message: '名称不能超过20个字符' }
-            ]}
-          >
-            <Input placeholder="请输入举措名称（不超过20字符）" maxLength={20} showCount />
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="expectedTime"
-                label="预计资源到位时间"
-                rules={[{ required: true, message: '请选择预计到位时间' }]}
-              >
-                <DatePicker
-                  showTime={{ format: 'HH:mm' }}
-                  format="YYYY-MM-DD HH:mm"
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="expectedAmount"
-                label="预计资源筹备量级（核）"
-                rules={[{ required: true, message: '请输入预计筹备量级' }]}
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={1}
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="actualTime"
-                label="实际资源到位时间"
-              >
-                <DatePicker
-                  showTime={{ format: 'HH:mm' }}
-                  format="YYYY-MM-DD HH:mm"
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="actualAmount"
-                label="实际资源筹备量级（核）"
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={0}
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-             </Col>
-           </Row>
-           <Form.Item
-             name="description"
-             label="描述"
-             rules={[
-               { required: true, message: '请输入筹措描述' },
-               { max: 200, message: '描述不能超过200个字符' }
-             ]}
-           >
-             <TextArea
-               placeholder="请输入筹措描述，介绍筹措背景与目的等（不超过200字符）"
-               rows={3}
-               maxLength={200}
-               showCount
-             />
-           </Form.Item>
-         </Form>
-       </Modal>
 
        {/* 修改筹措举措Modal */}
       <Modal
