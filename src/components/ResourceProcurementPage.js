@@ -1393,43 +1393,51 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasu
                  <div>
                    {/* 筹措计划统计卡片 */}
                    <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                     <Col xs={24} sm={12} md={6}>
+                     <Col xs={24} sm={12} md={8}>
                        <Card size="small">
                          <Statistic
-                           title="总计划数"
-                           value={procurementPlans.length}
-                           suffix="个"
-                           valueStyle={{ color: '#1890ff' }}
-                         />
-                       </Card>
-                     </Col>
-                     <Col xs={24} sm={12} md={6}>
-                       <Card size="small">
-                         <Statistic
-                           title="筹备中"
-                           value={procurementPlans.filter(plan => plan.status === '筹备中').length}
-                           suffix="个"
-                           valueStyle={{ color: '#faad14' }}
-                         />
-                       </Card>
-                     </Col>
-                     <Col xs={24} sm={12} md={6}>
-                       <Card size="small">
-                         <Statistic
-                           title="筹备完成"
-                           value={procurementPlans.filter(plan => plan.status === '筹备完成').length}
-                           suffix="个"
-                           valueStyle={{ color: '#52c41a' }}
-                         />
-                       </Card>
-                     </Col>
-                     <Col xs={24} sm={12} md={6}>
-                       <Card size="small">
-                         <Statistic
-                           title="总资源缺口"
+                           title="总计划资源缺口"
                            value={procurementPlans.reduce((sum, plan) => sum + plan.resourceGapMax, 0)}
                            suffix="核"
                            valueStyle={{ color: '#f5222d' }}
+                           formatter={(value) => value.toLocaleString()}
+                         />
+                       </Card>
+                     </Col>
+                     <Col xs={24} sm={12} md={8}>
+                       <Card size="small">
+                         <Statistic
+                           title="已筹备"
+                           value={procurementPlans.reduce((sum, plan) => {
+                             return sum + plan.measures.reduce((measureSum, measure) => {
+                               return measureSum + measure.timePoints.reduce((pointSum, point) => {
+                                 return pointSum + (point.actualAmount || 0);
+                               }, 0);
+                             }, 0);
+                           }, 0)}
+                           suffix="核"
+                           valueStyle={{ color: '#52c41a' }}
+                           formatter={(value) => value.toLocaleString()}
+                         />
+                       </Card>
+                     </Col>
+                     <Col xs={24} sm={12} md={8}>
+                       <Card size="small">
+                         <Statistic
+                           title="待筹备/筹备中"
+                           value={procurementPlans.reduce((sum, plan) => {
+                             if (plan.status === '待筹备' || plan.status === '筹备中') {
+                               return sum + plan.measures.reduce((measureSum, measure) => {
+                                 return measureSum + measure.timePoints.reduce((pointSum, point) => {
+                                   return pointSum + (point.expectedAmount - (point.actualAmount || 0));
+                                 }, 0);
+                               }, 0);
+                             }
+                             return sum;
+                           }, 0)}
+                           suffix="核"
+                           valueStyle={{ color: '#faad14' }}
+                           formatter={(value) => value.toLocaleString()}
                          />
                        </Card>
                      </Col>
