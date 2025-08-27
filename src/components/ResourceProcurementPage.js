@@ -40,12 +40,10 @@ import './ResourceProcurementPage.css';
 const { Option } = Select;
 const { TextArea } = Input;
 
-const ResourceProcurementPage = ({ onNavigateToAddMeasure }) => {
+const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasure }) => {
   const [createPlanModalVisible, setCreatePlanModalVisible] = useState(false);
   const [editPlanModalVisible, setEditPlanModalVisible] = useState(false);
-  const [editMeasureModalVisible, setEditMeasureModalVisible] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
-  const [editingMeasure, setEditingMeasure] = useState(null);
   const [expandedRowKeys, setExpandedRowKeys] = useState([]);
 
   // 新增：Tab 相关状态
@@ -830,55 +828,10 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure }) => {
 
   // 修改筹措举措
   const handleEditMeasure = (measure) => {
-    setEditingMeasure(measure);
-    setEditMeasureModalVisible(true);
-
-     editMeasureForm.setFieldsValue({
-       type: measure.type,
-       name: measure.name,
-       expectedTime: dayjs(measure.timePoints[0].expectedTime, 'YYYY-MM-DD HH:mm'),
-       expectedAmount: measure.timePoints[0].expectedAmount,
-       actualTime: measure.timePoints[0].actualTime ? dayjs(measure.timePoints[0].actualTime, 'YYYY-MM-DD HH:mm') : null,
-       actualAmount: measure.timePoints[0].actualAmount,
-       status: measure.status,
-       description: measure.description
-     });
-  };
-
-  const handleEditMeasureSubmit = async () => {
-    try {
-      const values = await editMeasureForm.validateFields();
-
-       setProcurementPlans(prev =>
-         prev.map(plan => ({
-           ...plan,
-           measures: plan.measures.map(measure =>
-             measure.id === editingMeasure.id
-               ? {
-                   ...measure,
-                   type: values.type,
-                   name: values.name,
-                   timePoints: [
-                     {
-                       expectedTime: values.expectedTime.format('YYYY-MM-DD HH:mm'),
-                       expectedAmount: values.expectedAmount,
-                       actualTime: values.actualTime ? values.actualTime.format('YYYY-MM-DD HH:mm') : '',
-                       actualAmount: values.actualAmount || 0
-                     }
-                   ],
-                   status: values.status,
-                   description: values.description
-                 }
-               : measure
-           )
-         }))
-       );
-
-      message.success('筹措举措修改成功！');
-      setEditMeasureModalVisible(false);
-      setEditingMeasure(null);
-    } catch (error) {
-      console.error('表单验证失败:', error);
+    if (onNavigateToEditMeasure) {
+      // 找到该举措所属的计划ID
+      const plan = procurementPlans.find(p => p.measures.some(m => m.id === measure.id));
+      onNavigateToEditMeasure(measure.id, plan?.id);
     }
   };
 
@@ -1919,132 +1872,6 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure }) => {
       </Modal>
 
 
-       {/* 修改筹措举措Modal */}
-      <Modal
-        title="修改筹措举措信息"
-        open={editMeasureModalVisible}
-        onOk={handleEditMeasureSubmit}
-        onCancel={() => setEditMeasureModalVisible(false)}
-        width={600}
-        okText="保存修改"
-        cancelText="取消"
-      >
-        <Form form={editMeasureForm} layout="vertical" style={{ marginTop: 16 }}>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="type"
-                label="筹措类型"
-                rules={[{ required: true, message: '请选择筹措类型' }]}
-              >
-                <Select>
-                  {measureTypes.map(type => (
-                    <Option key={type.value} value={type.value}>
-                      {type.label}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="status"
-                label="状态"
-                rules={[{ required: true, message: '请选择状态' }]}
-              >
-                <Select>
-                  {measureStatusOptions.map(status => (
-                    <Option key={status.value} value={status.value}>
-                      {status.label}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item
-            name="name"
-            label="筹备举措名称"
-            rules={[
-              { required: true, message: '请输入举措名称' },
-              { max: 20, message: '名称不能超过20个字符' }
-            ]}
-          >
-            <Input placeholder="请输入举措名称（不超过20字符）" maxLength={20} showCount />
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="expectedTime"
-                label="预计资源到位时间"
-                rules={[{ required: true, message: '请选择预计到位时间' }]}
-              >
-                <DatePicker
-                  showTime={{ format: 'HH:mm' }}
-                  format="YYYY-MM-DD HH:mm"
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="expectedAmount"
-                label="预计资源筹备量级（核）"
-                rules={[{ required: true, message: '请输入预计筹备量级' }]}
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={1}
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="actualTime"
-                label="实际资源到位时间"
-              >
-                <DatePicker
-                  showTime={{ format: 'HH:mm' }}
-                  format="YYYY-MM-DD HH:mm"
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="actualAmount"
-                label="实际资源筹备量级（核）"
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={0}
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-             </Col>
-           </Row>
-           <Form.Item
-             name="description"
-             label="描述"
-             rules={[
-               { required: true, message: '请输入筹措描述' },
-               { max: 200, message: '描述不能超过200个字符' }
-             ]}
-           >
-             <TextArea
-               placeholder="请输入筹措描述，介绍筹措背景与目的等（不超过200字符）"
-               rows={3}
-               maxLength={200}
-               showCount
-             />
-           </Form.Item>
-         </Form>
-       </Modal>
      </div>
    );
  };
