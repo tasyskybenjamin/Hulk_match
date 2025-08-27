@@ -65,6 +65,16 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure }) => {
   const [selectedProcurementIds, setSelectedProcurementIds] = useState([]);
   const [procurementTableVisible, setProcurementTableVisible] = useState(false);
 
+  // 新增：筹措计划筛选状态
+  const [planFilters, setPlanFilters] = useState({
+    status: [],
+    datacenter: [],
+    initiator: '',
+    createTimeRange: null,
+    resourceGapRange: [null, null]
+  });
+  const [planLoading, setPlanLoading] = useState(false);
+
   const [planForm] = Form.useForm();
   const [editPlanForm] = Form.useForm();
   const [measureForm] = Form.useForm();
@@ -1212,8 +1222,75 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure }) => {
     message.success(`已将 ${selectedProcurementIds.length} 个采购单的到货时间更新为：${newArrivalTime}`);
   };
 
-  // 私有云采购单选择表格列配置
-  const procurementSelectionColumns = [
+   // 筹措计划筛选处理函数
+   const handlePlanFilterChange = (changedValues, allValues) => {
+     setPlanFilters(allValues);
+     console.log('筹措计划筛选条件变更:', allValues);
+   };
+
+   // 重置筹措计划筛选条件
+   const handleResetPlanFilters = () => {
+     setPlanFilters({
+       status: [],
+       datacenter: [],
+       initiator: '',
+       createTimeRange: null,
+       resourceGapRange: [null, null]
+     });
+   };
+
+   // 导出筹措计划数据
+   const handleExportPlanData = () => {
+     message.success('导出功能开发中...');
+   };
+
+   // 刷新筹措计划数据
+   const handleRefreshPlanData = () => {
+     setPlanLoading(true);
+     setTimeout(() => {
+       setPlanLoading(false);
+       message.success('数据刷新成功！');
+     }, 1000);
+   };
+
+   // 获取筛选后的筹措计划数据
+   const getFilteredPlanData = () => {
+     let filtered = [...procurementPlans];
+
+     // 状态筛选
+     if (planFilters.status && planFilters.status.length > 0) {
+       filtered = filtered.filter(plan => planFilters.status.includes(plan.status));
+     }
+
+     // 机房筛选
+     if (planFilters.datacenter && planFilters.datacenter.length > 0) {
+       filtered = filtered.filter(plan => {
+         const planDatacenters = Array.isArray(plan.datacenter) ? plan.datacenter : [plan.datacenter];
+         return planFilters.datacenter.some(dc => planDatacenters.includes(dc));
+       });
+     }
+
+     // 发起人筛选
+     if (planFilters.initiator && planFilters.initiator.trim()) {
+       filtered = filtered.filter(plan =>
+         plan.initiator.toLowerCase().includes(planFilters.initiator.toLowerCase())
+       );
+     }
+
+     // 创建时间范围筛选
+     if (planFilters.createTimeRange && planFilters.createTimeRange.length === 2) {
+       const [startTime, endTime] = planFilters.createTimeRange;
+       filtered = filtered.filter(plan => {
+         const createTime = new Date(plan.createTime);
+         return createTime >= startTime.toDate() && createTime <= endTime.toDate();
+       });
+     }
+
+     return filtered;
+   };
+
+   // 私有云采购单选择表格列配置
+   const procurementSelectionColumns = [
     {
       title: '套餐',
       dataIndex: 'package',
@@ -1359,35 +1436,158 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure }) => {
                   筹措计划列表
                 </span>
               ),
-              children: (
-                <div>
-                  <Table
-                    columns={mainColumns}
-                    dataSource={procurementPlans}
-                    rowKey="id"
-                    expandable={{
-                      expandedRowRender,
-                      expandedRowKeys,
-                      onExpand: handleExpand,
-                      expandIcon: ({ expanded, onExpand, record }) => (
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={expanded ? <DownOutlined /> : <RightOutlined />}
-                          onClick={e => onExpand(record, e)}
-                        />
-                      )
-                    }}
-                    pagination={{
-                      pageSize: 10,
-                      showSizeChanger: true,
-                      showQuickJumper: true,
-                      showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
-                    }}
-                    size="middle"
-                  />
-                </div>
-              )
+               children: (
+                 <div>
+                   {/* 筹措计划统计卡片 */}
+                   <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+                     <Col xs={24} sm={12} md={6}>
+                       <Card size="small">
+                         <Statistic
+                           title="总计划数"
+                           value={procurementPlans.length}
+                           suffix="个"
+                           valueStyle={{ color: '#1890ff' }}
+                         />
+                       </Card>
+                     </Col>
+                     <Col xs={24} sm={12} md={6}>
+                       <Card size="small">
+                         <Statistic
+                           title="筹备中"
+                           value={procurementPlans.filter(plan => plan.status === '筹备中').length}
+                           suffix="个"
+                           valueStyle={{ color: '#faad14' }}
+                         />
+                       </Card>
+                     </Col>
+                     <Col xs={24} sm={12} md={6}>
+                       <Card size="small">
+                         <Statistic
+                           title="筹备完成"
+                           value={procurementPlans.filter(plan => plan.status === '筹备完成').length}
+                           suffix="个"
+                           valueStyle={{ color: '#52c41a' }}
+                         />
+                       </Card>
+                     </Col>
+                     <Col xs={24} sm={12} md={6}>
+                       <Card size="small">
+                         <Statistic
+                           title="总资源缺口"
+                           value={procurementPlans.reduce((sum, plan) => sum + plan.resourceGapMax, 0)}
+                           suffix="核"
+                           valueStyle={{ color: '#f5222d' }}
+                         />
+                       </Card>
+                     </Col>
+                   </Row>
+
+                   {/* 筹措计划筛选面板 */}
+                   <Card size="small" style={{ marginBottom: 16 }}>
+                     <Form
+                       layout="inline"
+                       onValuesChange={handlePlanFilterChange}
+                       style={{ width: '100%' }}
+                     >
+                       <Row gutter={[16, 8]} style={{ width: '100%' }}>
+                         <Col xs={24} sm={12} md={8} lg={6}>
+                           <Form.Item name="status" label="计划状态" style={{ marginBottom: 8 }}>
+                             <Select
+                               mode="multiple"
+                               placeholder="选择状态"
+                               allowClear
+                               style={{ width: '100%' }}
+                               options={planStatusOptions.map(item => ({ value: item.value, label: item.label }))}
+                             />
+                           </Form.Item>
+                         </Col>
+                         <Col xs={24} sm={12} md={8} lg={6}>
+                           <Form.Item name="datacenter" label="涉及机房" style={{ marginBottom: 8 }}>
+                             <Select
+                               mode="multiple"
+                               placeholder="选择机房"
+                               allowClear
+                               style={{ width: '100%' }}
+                               options={datacenterOptions}
+                             />
+                           </Form.Item>
+                         </Col>
+                         <Col xs={24} sm={12} md={8} lg={6}>
+                           <Form.Item name="initiator" label="发起人" style={{ marginBottom: 8 }}>
+                             <Input
+                               placeholder="输入发起人"
+                               allowClear
+                               style={{ width: '100%' }}
+                             />
+                           </Form.Item>
+                         </Col>
+                         <Col xs={24} sm={12} md={8} lg={6}>
+                           <Form.Item name="createTimeRange" label="创建时间" style={{ marginBottom: 8 }}>
+                             <DatePicker.RangePicker
+                               showTime={{ format: 'HH:mm' }}
+                               format="YYYY-MM-DD HH:mm"
+                               placeholder={['开始时间', '结束时间']}
+                               style={{ width: '100%' }}
+                             />
+                           </Form.Item>
+                         </Col>
+                         <Col xs={24} sm={12} md={8} lg={6}>
+                           <Form.Item style={{ marginBottom: 8 }}>
+                             <Space>
+                               <Button
+                                 icon={<FilterOutlined />}
+                                 onClick={handleResetPlanFilters}
+                               >
+                                 重置
+                               </Button>
+                               <Button
+                                 icon={<ExportOutlined />}
+                                 onClick={handleExportPlanData}
+                               >
+                                 导出
+                               </Button>
+                               <Button
+                                 icon={<ReloadOutlined />}
+                                 onClick={handleRefreshPlanData}
+                                 loading={planLoading}
+                               >
+                                 刷新
+                               </Button>
+                             </Space>
+                           </Form.Item>
+                         </Col>
+                       </Row>
+                     </Form>
+                   </Card>
+
+                   <Table
+                     columns={mainColumns}
+                     dataSource={getFilteredPlanData()}
+                     rowKey="id"
+                     loading={planLoading}
+                     expandable={{
+                       expandedRowRender,
+                       expandedRowKeys,
+                       onExpand: handleExpand,
+                       expandIcon: ({ expanded, onExpand, record }) => (
+                         <Button
+                           type="text"
+                           size="small"
+                           icon={expanded ? <DownOutlined /> : <RightOutlined />}
+                           onClick={e => onExpand(record, e)}
+                         />
+                       )
+                     }}
+                     pagination={{
+                       pageSize: 10,
+                       showSizeChanger: true,
+                       showQuickJumper: true,
+                       showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+                     }}
+                     size="middle"
+                   />
+                 </div>
+               )
             },
             {
               key: 'procurement',
