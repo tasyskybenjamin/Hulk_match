@@ -322,7 +322,7 @@ const ResourceProcurementPage = () => {
       cabinetZone: 'B区',
       procurementId: 'DORA-2024-002',
       arrivalTime: '2025-01-05 10:00',
-      status: '运输中',
+      status: '在途',
       source: 'Dora采购单'
     },
     {
@@ -352,7 +352,7 @@ const ResourceProcurementPage = () => {
       cabinetZone: 'A区',
       procurementId: 'DORA-2024-003',
       arrivalTime: '2025-01-10 09:00',
-      status: '待发货',
+      status: '在途',
       source: 'Dora采购单'
     },
     {
@@ -367,7 +367,7 @@ const ResourceProcurementPage = () => {
       cabinetZone: 'D区',
       procurementId: 'HRS-2024-002',
       arrivalTime: '2025-01-15 11:00',
-      status: '筹措中',
+      status: '在途',
       source: 'HRS-资源筹措-私有云提拉'
     }
   ]);
@@ -1028,22 +1028,20 @@ const ResourceProcurementPage = () => {
       key: 'arrivalTime',
       width: 160,
       sorter: (a, b) => new Date(a.arrivalTime) - new Date(b.arrivalTime),
-      render: (time, record) => (
-        <div>
-          <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
-            {time}
-          </div>
-          <div style={{ marginTop: '2px' }}>
-            <Tag color={
-              record.status === '已到货' ? 'success' :
-              record.status === '运输中' ? 'processing' :
-              record.status === '待发货' ? 'warning' : 'default'
-            } size="small">
-              {record.status}
-            </Tag>
-          </div>
-        </div>
-      )
+       render: (time, record) => (
+         <div>
+           <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
+             {time}
+           </div>
+           <div style={{ marginTop: '2px' }}>
+             <Tag color={
+               record.status === '已到货' ? 'success' : 'processing'
+             } size="small">
+               {record.status}
+             </Tag>
+           </div>
+         </div>
+       )
     },
     {
       title: '操作',
@@ -1129,15 +1127,13 @@ const ResourceProcurementPage = () => {
             <Col span={8}><strong>到货时间:</strong></Col>
             <Col span={16}>{record.arrivalTime}</Col>
             <Col span={8}><strong>状态:</strong></Col>
-            <Col span={16}>
-              <Tag color={
-                record.status === '已到货' ? 'success' :
-                record.status === '运输中' ? 'processing' :
-                record.status === '待发货' ? 'warning' : 'default'
-              }>
-                {record.status}
-              </Tag>
-            </Col>
+             <Col span={16}>
+               <Tag color={
+                 record.status === '已到货' ? 'success' : 'processing'
+               }>
+                 {record.status}
+               </Tag>
+             </Col>
             <Col span={8}><strong>数据源:</strong></Col>
             <Col span={16}>{record.source}</Col>
           </Row>
@@ -1304,16 +1300,16 @@ const ResourceProcurementPage = () => {
                         />
                       </Card>
                     </Col>
-                    <Col xs={24} sm={12} md={6}>
-                      <Card size="small">
-                        <Statistic
-                          title="运输中"
-                          value={procurementData.filter(item => item.status === '运输中').length}
-                          suffix="批次"
-                          valueStyle={{ color: '#faad14' }}
-                        />
-                      </Card>
-                    </Col>
+                     <Col xs={24} sm={12} md={6}>
+                       <Card size="small">
+                         <Statistic
+                           title="在途"
+                           value={procurementData.filter(item => item.status === '在途').length}
+                           suffix="批次"
+                           valueStyle={{ color: '#faad14' }}
+                         />
+                       </Card>
+                     </Col>
                   </Row>
 
                   {/* 筛选面板 */}
