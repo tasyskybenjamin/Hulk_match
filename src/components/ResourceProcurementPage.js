@@ -34,6 +34,7 @@ import {
   ExportOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import './ResourceProcurementPage.css';
 
@@ -41,6 +42,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const ResourceProcurementPage = () => {
+  const navigate = useNavigate();
   const [createPlanModalVisible, setCreatePlanModalVisible] = useState(false);
   const [editPlanModalVisible, setEditPlanModalVisible] = useState(false);
   const [editMeasureModalVisible, setEditMeasureModalVisible] = useState(false);
@@ -810,11 +812,9 @@ const ResourceProcurementPage = () => {
     }
   };
 
-  // 添加筹措举措 - 跳转到新页面
+  // 添加筹措举措
   const handleAddMeasure = (plan) => {
-    // 使用 window.open 或者路由跳转到新页面
-    // 这里假设使用路由跳转，需要在路由配置中添加对应路由
-    window.open(`/add-measure?planId=${plan.id}`, '_blank');
+    navigate(`/resource-procurement/add-measure/${plan.id}`);
   };
 
 
