@@ -16,7 +16,9 @@ import {
   message,
   Divider,
   Popconfirm,
-  Tooltip
+  Tooltip,
+  Tabs,
+  Statistic
 } from 'antd';
 import {
   PlusOutlined,
@@ -26,7 +28,11 @@ import {
   DeleteOutlined,
   MinusCircleOutlined,
   DownOutlined,
-  RightOutlined
+  RightOutlined,
+  CloudServerOutlined,
+  FilterOutlined,
+  ExportOutlined,
+  ReloadOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import './ResourceProcurementPage.css';
@@ -44,10 +50,24 @@ const ResourceProcurementPage = () => {
   const [currentPlanId, setCurrentPlanId] = useState(null);
   const [expandedRowKeys, setExpandedRowKeys] = useState([]);
 
+  // 新增：Tab 相关状态
+  const [activeTab, setActiveTab] = useState('plans');
+  const [procurementFilters, setProcurementFilters] = useState({
+    package: [],
+    type: [],
+    cpuCores: [],
+    region: [],
+    datacenter: [],
+    cabinetZone: [],
+    arrivalTimeRange: null
+  });
+  const [procurementLoading, setProcurementLoading] = useState(false);
+
   const [planForm] = Form.useForm();
   const [editPlanForm] = Form.useForm();
   const [measureForm] = Form.useForm();
   const [editMeasureForm] = Form.useForm();
+  const [procurementFilterForm] = Form.useForm();
 
   // 添加状态来跟踪当前计算结果
   const [currentCalculation, setCurrentCalculation] = useState(null);
@@ -227,6 +247,130 @@ const ResourceProcurementPage = () => {
     { value: 'HL-DC2', label: 'HL-DC2', region: '怀来' },
     { value: 'OTHER', label: '其他', region: '其他' }
   ];
+
+  // 私有云采购与提拉数据的筛选选项
+  const packageOptions = [
+    { value: 'Standard-4C8G', label: 'Standard-4C8G' },
+    { value: 'Standard-8C16G', label: 'Standard-8C16G' },
+    { value: 'Standard-16C32G', label: 'Standard-16C32G' },
+    { value: 'Compute-8C16G', label: 'Compute-8C16G' },
+    { value: 'Compute-16C32G', label: 'Compute-16C32G' },
+    { value: 'Memory-8C32G', label: 'Memory-8C32G' },
+    { value: 'Memory-16C64G', label: 'Memory-16C64G' },
+    { value: 'Storage-8C16G', label: 'Storage-8C16G' }
+  ];
+
+  const typeOptions = [
+    { value: '通用型', label: '通用型' },
+    { value: '计算型', label: '计算型' },
+    { value: '内存型', label: '内存型' },
+    { value: '存储型', label: '存储型' },
+    { value: 'GPU型', label: 'GPU型' }
+  ];
+
+  const cpuCoresOptions = [
+    { value: '4', label: '4核' },
+    { value: '8', label: '8核' },
+    { value: '16', label: '16核' },
+    { value: '32', label: '32核' },
+    { value: '64', label: '64核' }
+  ];
+
+  const regionOptions = [
+    { value: '北京', label: '北京' },
+    { value: '上海', label: '上海' },
+    { value: '广州', label: '广州' },
+    { value: '深圳', label: '深圳' },
+    { value: '怀来', label: '怀来' },
+    { value: '其他', label: '其他' }
+  ];
+
+  const cabinetZoneOptions = [
+    { value: 'A区', label: 'A区' },
+    { value: 'B区', label: 'B区' },
+    { value: 'C区', label: 'C区' },
+    { value: 'D区', label: 'D区' },
+    { value: 'E区', label: 'E区' }
+  ];
+
+  // 私有云采购与提拉数据模拟数据
+  const [procurementData, setProcurementData] = useState([
+    {
+      id: '1',
+      package: 'Standard-8C16G',
+      type: '通用型',
+      cpuCores: 8,
+      networkConfig: '万兆网卡',
+      quantity: 50,
+      region: '北京',
+      datacenter: 'BJ-DC1',
+      cabinetZone: 'A区',
+      procurementId: 'DORA-2024-001',
+      arrivalTime: '2024-12-28 14:00',
+      status: '已到货',
+      source: 'Dora采购单'
+    },
+    {
+      id: '2',
+      package: 'Compute-16C32G',
+      type: '计算型',
+      cpuCores: 16,
+      networkConfig: '万兆网卡',
+      quantity: 30,
+      region: '上海',
+      datacenter: 'SH-DC1',
+      cabinetZone: 'B区',
+      procurementId: 'DORA-2024-002',
+      arrivalTime: '2025-01-05 10:00',
+      status: '运输中',
+      source: 'Dora采购单'
+    },
+    {
+      id: '3',
+      package: 'Memory-8C32G',
+      type: '内存型',
+      cpuCores: 8,
+      networkConfig: '千兆网卡',
+      quantity: 25,
+      region: '广州',
+      datacenter: 'GZ-DC1',
+      cabinetZone: 'C区',
+      procurementId: 'HRS-2024-001',
+      arrivalTime: '2024-12-30 16:00',
+      status: '已到货',
+      source: 'HRS-资源筹措-私有云提拉'
+    },
+    {
+      id: '4',
+      package: 'Standard-16C32G',
+      type: '通用型',
+      cpuCores: 16,
+      networkConfig: '万兆网卡',
+      quantity: 40,
+      region: '北京',
+      datacenter: 'BJ-DC2',
+      cabinetZone: 'A区',
+      procurementId: 'DORA-2024-003',
+      arrivalTime: '2025-01-10 09:00',
+      status: '待发货',
+      source: 'Dora采购单'
+    },
+    {
+      id: '5',
+      package: 'Storage-8C16G',
+      type: '存储型',
+      cpuCores: 8,
+      networkConfig: '万兆网卡',
+      quantity: 60,
+      region: '怀来',
+      datacenter: 'HL-DC1',
+      cabinetZone: 'D区',
+      procurementId: 'HRS-2024-002',
+      arrivalTime: '2025-01-15 11:00',
+      status: '筹措中',
+      source: 'HRS-资源筹措-私有云提拉'
+    }
+  ]);
 
   // 主表列配置
   const mainColumns = [
@@ -773,6 +917,281 @@ const ResourceProcurementPage = () => {
     message.success('筹措举措删除成功！');
   };
 
+  // 私有云采购与提拉数据表格列配置
+  const procurementColumns = [
+    {
+      title: '套餐',
+      dataIndex: 'package',
+      key: 'package',
+      width: 140,
+      render: (text) => (
+        <Tag color="blue" style={{ fontFamily: 'monospace' }}>
+          {text}
+        </Tag>
+      )
+    },
+    {
+      title: 'Type',
+      dataIndex: 'type',
+      key: 'type',
+      width: 100,
+      render: (text) => (
+        <Tag color={
+          text === '通用型' ? 'default' :
+          text === '计算型' ? 'processing' :
+          text === '内存型' ? 'success' :
+          text === '存储型' ? 'warning' : 'purple'
+        }>
+          {text}
+        </Tag>
+      )
+    },
+    {
+      title: 'CPU核数',
+      dataIndex: 'cpuCores',
+      key: 'cpuCores',
+      width: 100,
+      sorter: (a, b) => a.cpuCores - b.cpuCores,
+      render: (value) => (
+        <span style={{ fontWeight: 'bold', color: '#1890ff' }}>
+          {value} 核
+        </span>
+      )
+    },
+    {
+      title: '网卡配置',
+      dataIndex: 'networkConfig',
+      key: 'networkConfig',
+      width: 120,
+      render: (text) => (
+        <span style={{ fontSize: '12px' }}>{text}</span>
+      )
+    },
+    {
+      title: '采购数量',
+      dataIndex: 'quantity',
+      key: 'quantity',
+      width: 100,
+      sorter: (a, b) => a.quantity - b.quantity,
+      render: (value) => (
+        <span style={{ fontWeight: 'bold', color: '#52c41a' }}>
+          {value} 台
+        </span>
+      )
+    },
+    {
+      title: '地域',
+      dataIndex: 'region',
+      key: 'region',
+      width: 80,
+      render: (text) => (
+        <Tag color="geekblue">{text}</Tag>
+      )
+    },
+    {
+      title: '机房',
+      dataIndex: 'datacenter',
+      key: 'datacenter',
+      width: 100,
+      render: (text) => (
+        <Tag color="cyan">{text}</Tag>
+      )
+    },
+    {
+      title: '机柜专区',
+      dataIndex: 'cabinetZone',
+      key: 'cabinetZone',
+      width: 100,
+      render: (text) => (
+        <Tag color="orange">{text}</Tag>
+      )
+    },
+    {
+      title: '采购标识',
+      dataIndex: 'procurementId',
+      key: 'procurementId',
+      width: 140,
+      render: (text, record) => (
+        <div>
+          <div style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '12px' }}>
+            {text}
+          </div>
+          <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
+            {record.source}
+          </div>
+        </div>
+      )
+    },
+    {
+      title: '采购到货时间',
+      dataIndex: 'arrivalTime',
+      key: 'arrivalTime',
+      width: 160,
+      sorter: (a, b) => new Date(a.arrivalTime) - new Date(b.arrivalTime),
+      render: (time, record) => (
+        <div>
+          <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
+            {time}
+          </div>
+          <div style={{ marginTop: '2px' }}>
+            <Tag color={
+              record.status === '已到货' ? 'success' :
+              record.status === '运输中' ? 'processing' :
+              record.status === '待发货' ? 'warning' : 'default'
+            } size="small">
+              {record.status}
+            </Tag>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 120,
+      fixed: 'right',
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewProcurementDetail(record)}
+          >
+            详情
+          </Button>
+        </Space>
+      )
+    }
+  ];
+
+  // 处理私有云采购与提拉数据筛选
+  const handleProcurementFilterChange = (changedValues, allValues) => {
+    setProcurementFilters(allValues);
+    // 这里可以添加实际的筛选逻辑
+    console.log('筛选条件变更:', allValues);
+  };
+
+  // 重置筛选条件
+  const handleResetProcurementFilters = () => {
+    procurementFilterForm.resetFields();
+    setProcurementFilters({
+      package: [],
+      type: [],
+      cpuCores: [],
+      region: [],
+      datacenter: [],
+      cabinetZone: [],
+      arrivalTimeRange: null
+    });
+  };
+
+  // 导出私有云采购与提拉数据
+  const handleExportProcurementData = () => {
+    message.success('导出功能开发中...');
+  };
+
+  // 刷新私有云采购与提拉数据
+  const handleRefreshProcurementData = () => {
+    setProcurementLoading(true);
+    setTimeout(() => {
+      setProcurementLoading(false);
+      message.success('数据刷新成功！');
+    }, 1000);
+  };
+
+  // 查看采购详情
+  const handleViewProcurementDetail = (record) => {
+    Modal.info({
+      title: '采购详情',
+      width: 600,
+      content: (
+        <div style={{ marginTop: 16 }}>
+          <Row gutter={[16, 8]}>
+            <Col span={8}><strong>套餐:</strong></Col>
+            <Col span={16}>{record.package}</Col>
+            <Col span={8}><strong>类型:</strong></Col>
+            <Col span={16}>{record.type}</Col>
+            <Col span={8}><strong>CPU核数:</strong></Col>
+            <Col span={16}>{record.cpuCores} 核</Col>
+            <Col span={8}><strong>网卡配置:</strong></Col>
+            <Col span={16}>{record.networkConfig}</Col>
+            <Col span={8}><strong>采购数量:</strong></Col>
+            <Col span={16}>{record.quantity} 台</Col>
+            <Col span={8}><strong>地域:</strong></Col>
+            <Col span={16}>{record.region}</Col>
+            <Col span={8}><strong>机房:</strong></Col>
+            <Col span={16}>{record.datacenter}</Col>
+            <Col span={8}><strong>机柜专区:</strong></Col>
+            <Col span={16}>{record.cabinetZone}</Col>
+            <Col span={8}><strong>采购标识:</strong></Col>
+            <Col span={16}>{record.procurementId}</Col>
+            <Col span={8}><strong>到货时间:</strong></Col>
+            <Col span={16}>{record.arrivalTime}</Col>
+            <Col span={8}><strong>状态:</strong></Col>
+            <Col span={16}>
+              <Tag color={
+                record.status === '已到货' ? 'success' :
+                record.status === '运输中' ? 'processing' :
+                record.status === '待发货' ? 'warning' : 'default'
+              }>
+                {record.status}
+              </Tag>
+            </Col>
+            <Col span={8}><strong>数据源:</strong></Col>
+            <Col span={16}>{record.source}</Col>
+          </Row>
+        </div>
+      )
+    });
+  };
+
+  // 获取筛选后的数据
+  const getFilteredProcurementData = () => {
+    let filtered = [...procurementData];
+
+    // 套餐筛选
+    if (procurementFilters.package && procurementFilters.package.length > 0) {
+      filtered = filtered.filter(item => procurementFilters.package.includes(item.package));
+    }
+
+    // 类型筛选
+    if (procurementFilters.type && procurementFilters.type.length > 0) {
+      filtered = filtered.filter(item => procurementFilters.type.includes(item.type));
+    }
+
+    // CPU核数筛选
+    if (procurementFilters.cpuCores && procurementFilters.cpuCores.length > 0) {
+      filtered = filtered.filter(item => procurementFilters.cpuCores.includes(item.cpuCores.toString()));
+    }
+
+    // 地域筛选
+    if (procurementFilters.region && procurementFilters.region.length > 0) {
+      filtered = filtered.filter(item => procurementFilters.region.includes(item.region));
+    }
+
+    // 机房筛选
+    if (procurementFilters.datacenter && procurementFilters.datacenter.length > 0) {
+      filtered = filtered.filter(item => procurementFilters.datacenter.includes(item.datacenter));
+    }
+
+    // 机柜专区筛选
+    if (procurementFilters.cabinetZone && procurementFilters.cabinetZone.length > 0) {
+      filtered = filtered.filter(item => procurementFilters.cabinetZone.includes(item.cabinetZone));
+    }
+
+    // 到货时间范围筛选
+    if (procurementFilters.arrivalTimeRange && procurementFilters.arrivalTimeRange.length === 2) {
+      const [startTime, endTime] = procurementFilters.arrivalTimeRange;
+      filtered = filtered.filter(item => {
+        const arrivalTime = new Date(item.arrivalTime);
+        return arrivalTime >= startTime.toDate() && arrivalTime <= endTime.toDate();
+      });
+    }
+
+    return filtered;
+  };
+
   return (
     <div className="resource-procurement-page" style={{ padding: '24px' }}>
       {/* 页面头部 */}
@@ -787,42 +1206,254 @@ const ResourceProcurementPage = () => {
               记录和管理已完成的资源筹措数据，维护筹措历史记录
             </p>
           </div>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreatePlan}
-          >
-            添加筹措计划
-          </Button>
+          {activeTab === 'plans' && (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleCreatePlan}
+            >
+              添加筹措计划
+            </Button>
+          )}
         </div>
       </Card>
 
-      {/* 筹措计划列表 */}
-      <Card title="筹措计划列表">
-        <Table
-          columns={mainColumns}
-          dataSource={procurementPlans}
-          rowKey="id"
-          expandable={{
-            expandedRowRender,
-            expandedRowKeys,
-            onExpand: handleExpand,
-            expandIcon: ({ expanded, onExpand, record }) => (
-              <Button
-                type="text"
-                size="small"
-                icon={expanded ? <DownOutlined /> : <RightOutlined />}
-                onClick={e => onExpand(record, e)}
-              />
-            )
+      {/* Tab 切换区域 */}
+      <Card>
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={[
+            {
+              key: 'plans',
+              label: (
+                <span>
+                  <SettingOutlined />
+                  筹措计划列表
+                </span>
+              ),
+              children: (
+                <div>
+                  <Table
+                    columns={mainColumns}
+                    dataSource={procurementPlans}
+                    rowKey="id"
+                    expandable={{
+                      expandedRowRender,
+                      expandedRowKeys,
+                      onExpand: handleExpand,
+                      expandIcon: ({ expanded, onExpand, record }) => (
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={expanded ? <DownOutlined /> : <RightOutlined />}
+                          onClick={e => onExpand(record, e)}
+                        />
+                      )
+                    }}
+                    pagination={{
+                      pageSize: 10,
+                      showSizeChanger: true,
+                      showQuickJumper: true,
+                      showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+                    }}
+                    size="middle"
+                  />
+                </div>
+              )
+            },
+            {
+              key: 'procurement',
+              label: (
+                <span>
+                  <CloudServerOutlined />
+                  私有云采购与提拉数据
+                </span>
+              ),
+              children: (
+                <div>
+                  {/* 统计卡片 */}
+                  <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+                    <Col xs={24} sm={12} md={6}>
+                      <Card size="small">
+                        <Statistic
+                          title="总采购数量"
+                          value={procurementData.reduce((sum, item) => sum + item.quantity, 0)}
+                          suffix="台"
+                          valueStyle={{ color: '#1890ff' }}
+                        />
+                      </Card>
+                    </Col>
+                    <Col xs={24} sm={12} md={6}>
+                      <Card size="small">
+                        <Statistic
+                          title="总CPU核数"
+                          value={procurementData.reduce((sum, item) => sum + (item.cpuCores * item.quantity), 0)}
+                          suffix="核"
+                          valueStyle={{ color: '#52c41a' }}
+                        />
+                      </Card>
+                    </Col>
+                    <Col xs={24} sm={12} md={6}>
+                      <Card size="small">
+                        <Statistic
+                          title="已到货"
+                          value={procurementData.filter(item => item.status === '已到货').length}
+                          suffix="批次"
+                          valueStyle={{ color: '#52c41a' }}
+                        />
+                      </Card>
+                    </Col>
+                    <Col xs={24} sm={12} md={6}>
+                      <Card size="small">
+                        <Statistic
+                          title="运输中"
+                          value={procurementData.filter(item => item.status === '运输中').length}
+                          suffix="批次"
+                          valueStyle={{ color: '#faad14' }}
+                        />
+                      </Card>
+                    </Col>
+                  </Row>
+
+                  {/* 筛选面板 */}
+                  <Card size="small" style={{ marginBottom: 16 }}>
+                    <Form
+                      form={procurementFilterForm}
+                      layout="inline"
+                      onValuesChange={handleProcurementFilterChange}
+                      style={{ width: '100%' }}
+                    >
+                      <Row gutter={[16, 8]} style={{ width: '100%' }}>
+                        <Col xs={24} sm={12} md={8} lg={6}>
+                          <Form.Item name="package" label="套餐" style={{ marginBottom: 8 }}>
+                            <Select
+                              mode="multiple"
+                              placeholder="选择套餐"
+                              allowClear
+                              style={{ width: '100%' }}
+                              options={packageOptions}
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12} md={8} lg={6}>
+                          <Form.Item name="type" label="Type" style={{ marginBottom: 8 }}>
+                            <Select
+                              mode="multiple"
+                              placeholder="选择类型"
+                              allowClear
+                              style={{ width: '100%' }}
+                              options={typeOptions}
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12} md={8} lg={6}>
+                          <Form.Item name="cpuCores" label="CPU核数" style={{ marginBottom: 8 }}>
+                            <Select
+                              mode="multiple"
+                              placeholder="选择核数"
+                              allowClear
+                              style={{ width: '100%' }}
+                              options={cpuCoresOptions}
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12} md={8} lg={6}>
+                          <Form.Item name="region" label="地域" style={{ marginBottom: 8 }}>
+                            <Select
+                              mode="multiple"
+                              placeholder="选择地域"
+                              allowClear
+                              style={{ width: '100%' }}
+                              options={regionOptions}
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12} md={8} lg={6}>
+                          <Form.Item name="datacenter" label="机房" style={{ marginBottom: 8 }}>
+                            <Select
+                              mode="multiple"
+                              placeholder="选择机房"
+                              allowClear
+                              style={{ width: '100%' }}
+                              options={datacenterOptions}
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12} md={8} lg={6}>
+                          <Form.Item name="cabinetZone" label="机柜专区" style={{ marginBottom: 8 }}>
+                            <Select
+                              mode="multiple"
+                              placeholder="选择专区"
+                              allowClear
+                              style={{ width: '100%' }}
+                              options={cabinetZoneOptions}
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12} md={8} lg={6}>
+                          <Form.Item name="arrivalTimeRange" label="到货时间" style={{ marginBottom: 8 }}>
+                            <DatePicker.RangePicker
+                              showTime={{ format: 'HH:mm' }}
+                              format="YYYY-MM-DD HH:mm"
+                              placeholder={['开始时间', '结束时间']}
+                              style={{ width: '100%' }}
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12} md={8} lg={6}>
+                          <Form.Item style={{ marginBottom: 8 }}>
+                            <Space>
+                              <Button
+                                icon={<FilterOutlined />}
+                                onClick={handleResetProcurementFilters}
+                              >
+                                重置
+                              </Button>
+                              <Button
+                                icon={<ExportOutlined />}
+                                onClick={handleExportProcurementData}
+                              >
+                                导出
+                              </Button>
+                              <Button
+                                icon={<ReloadOutlined />}
+                                onClick={handleRefreshProcurementData}
+                                loading={procurementLoading}
+                              >
+                                刷新
+                              </Button>
+                            </Space>
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                    </Form>
+                  </Card>
+
+                  {/* 数据表格 */}
+                  <Table
+                    columns={procurementColumns}
+                    dataSource={getFilteredProcurementData()}
+                    rowKey="id"
+                    loading={procurementLoading}
+                    pagination={{
+                      pageSize: 10,
+                      showSizeChanger: true,
+                      showQuickJumper: true,
+                      showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+                    }}
+                    size="middle"
+                    scroll={{ x: 'max-content' }}
+                  />
+                </div>
+              )
+            }
+          ]}
+          size="large"
+          tabBarStyle={{
+            marginBottom: 24,
+            borderBottom: '1px solid #f0f0f0'
           }}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
-          }}
-          size="middle"
         />
       </Card>
 

@@ -107,3 +107,76 @@
     padding: 8px 12px;
   }
 }
+
+/* 新增：Tab 相关样式 */
+.resource-procurement-page .ant-tabs-tab {
+  font-weight: 500;
+}
+
+.resource-procurement-page .ant-tabs-tab-active {
+  font-weight: 600;
+}
+
+.resource-procurement-page .ant-tabs-content-holder {
+  padding-top: 0;
+}
+
+/* 统计卡片样式 */
+.resource-procurement-page .ant-statistic-title {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.resource-procurement-page .ant-statistic-content {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* 筛选面板样式 */
+.resource-procurement-page .ant-form-inline .ant-form-item {
+  margin-right: 0;
+  margin-bottom: 8px;
+}
+
+.resource-procurement-page .ant-form-inline .ant-form-item-label {
+  width: auto;
+  min-width: 60px;
+}
+
+/* 表格样式优化 */
+.resource-procurement-page .ant-table-thead > tr > th {
+  font-size: 13px;
+  padding: 12px 8px;
+}
+
+.resource-procurement-page .ant-table-tbody > tr > td {
+  font-size: 12px;
+  padding: 8px;
+}
+
+/* Tag 样式优化 */
+.resource-procurement-page .ant-tag {
+  font-size: 11px;
+  line-height: 18px;
+  padding: 0 6px;
+  border-radius: 3px;
+}
+
+/* 响应式优化 */
+@media (max-width: 1200px) {
+  .resource-procurement-page .ant-col-lg-6 {
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .resource-procurement-page .ant-statistic-content {
+    font-size: 18px;
+  }
+
+  .resource-procurement-page .ant-form-inline .ant-form-item-label {
+    min-width: 50px;
+    font-size: 12px;
+  }
+}
