@@ -755,17 +755,13 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasu
       // 自动计算资源缺口和涉及机房
       const calculation = calculateResourceGap(startTime, endTime);
 
-      if (calculation.resourceGapMax <= 0) {
-        message.warning('该时间段内无资源缺口，无需创建筹措计划！');
-        return;
-      }
-
+      // 允许创建筹措计划，即使没有资源缺口
       const newPlan = {
         id: Date.now().toString(),
-        resourceGapMax: calculation.resourceGapMax,
+        resourceGapMax: Math.max(0, calculation.resourceGapMax), // 确保不为负数
         gapStartTime: startTime,
         gapEndTime: endTime,
-        datacenter: calculation.involvedDatacenters,
+        datacenter: calculation.involvedDatacenters.length > 0 ? calculation.involvedDatacenters : ['ALL'], // 如果没有涉及机房，设置为ALL
         status: '待完善',
         initiator: 'system',
         createTime: dayjs().format('YYYY-MM-DD HH:mm'),
@@ -776,9 +772,9 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasu
       setProcurementPlans(prev => [newPlan, ...prev]);
 
       message.success(
-        `筹措计划创建成功！\n` +
-        `资源缺口最大值：${calculation.resourceGapMax.toLocaleString()} 核\n` +
-        `涉及机房：${calculation.involvedDatacenters.join(', ')}`
+        calculation.resourceGapMax > 0
+          ? `筹措计划创建成功！\n资源缺口最大值：${calculation.resourceGapMax.toLocaleString()} 核\n涉及机房：${calculation.involvedDatacenters.join(', ')}`
+          : `预防性筹措计划创建成功！\n该时间段内无资源缺口，已创建预防性筹措计划用于资源储备和优化配置。`
       );
 
       setCreatePlanModalVisible(false);
@@ -1829,8 +1825,13 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasu
                   </div>
                 </div>
               ) : (
-                <div style={{ fontSize: '14px', color: '#52c41a' }}>
-                  ✅ 该时间段内无资源缺口，无需创建筹措计划
+                <div>
+                  <div style={{ fontSize: '14px', color: '#52c41a', marginBottom: '4px' }}>
+                    ✅ 该时间段内无资源缺口，可创建预防性筹措计划
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666' }}>
+                    即使无资源缺口，也可以创建筹措计划用于预防性资源储备或优化资源配置
+                  </div>
                 </div>
               )}
             </div>
