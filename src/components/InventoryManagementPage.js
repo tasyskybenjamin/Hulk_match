@@ -35,8 +35,8 @@ import './InventoryManagementPage.css';
 const InventoryManagementPage = ({ onNavigateToResourceProcurement }) => {
   const [filters, setFilters] = useState({
     dateRange: [
-      dayjs().subtract(2, 'month').startOf('day'), // 开始日期 00:00:00
-      dayjs().add(2, 'month').endOf('day').subtract(11, 'seconds') // 结束日期 23:59:49
+      dayjs().subtract(1, 'month').startOf('day'), // 开始日期 00:00:00
+      dayjs().add(1, 'month').endOf('day').subtract(11, 'seconds') // 结束日期 23:59:49
     ],
     clusterCascader: [], // 级联选择器：集群组->专区->调用方
     regionCascader: [], // 地域级联选择器：地域->机房
@@ -1067,11 +1067,11 @@ const InventoryManagementPage = ({ onNavigateToResourceProcurement }) => {
       case 'outbound':
         return ['outbound'];
       case 'safety':
-        return ['safety', 'safety_outbound']; // 安全预留：余量 + 已出库
+        return ['safety']; // 安全预留：仅显示可用量
       case 'emergency':
-        return ['emergency', 'emergency_outbound']; // 紧急资源：余量 + 已出库
+        return ['emergency']; // 紧急资源：仅显示可用量
       case 'operation':
-        return ['operation', 'operation_outbound']; // 运维资源：余量 + 已出库
+        return ['operation']; // 运维资源：仅显示可用量
       default:
         return ['total'];
     }
@@ -1452,9 +1452,6 @@ const InventoryManagementPage = ({ onNavigateToResourceProcurement }) => {
                               <div className="insight-label">热门地域 (Top1)</div>
                               <div className="insight-value">
                                 {insightData.topRegion.name} ({insightData.topRegion.percentage}%)
-                              </div>
-                              <div className={`insight-trend ${insightData.topRegion.trend >= 0 ? 'positive' : 'negative'}`}>
-                                {insightData.topRegion.trend >= 0 ? '↗' : '↘'} {Math.abs(insightData.topRegion.trend)}%
                               </div>
                             </div>
                           </Col>

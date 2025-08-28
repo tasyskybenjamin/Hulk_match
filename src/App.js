@@ -275,6 +275,189 @@ function App() {
                 }
               }}
             />
+          ) : selectedKey === 'delivery-management' ? (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '60vh',
+              flexDirection: 'column'
+            }}>
+              <div style={{
+                fontSize: '48px',
+                marginBottom: '24px',
+                color: '#d9d9d9'
+              }}>
+                📋
+              </div>
+              <div style={{
+                fontSize: '24px',
+                color: '#595959',
+                fontWeight: '500',
+                marginBottom: '12px'
+              }}>
+                交付与回收管理
+              </div>
+              <div style={{
+                fontSize: '16px',
+                color: '#8c8c8c'
+              }}>
+                本页面本期无改动
+              </div>
+            </div>
+          ) : selectedKey === 'configuration-management' ? (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '60vh',
+              flexDirection: 'column'
+            }}>
+              <div style={{
+                fontSize: '48px',
+                marginBottom: '24px',
+                color: '#d9d9d9'
+              }}>
+                ⚙️
+              </div>
+              <div style={{
+                fontSize: '24px',
+                color: '#595959',
+                fontWeight: '500',
+                marginBottom: '12px'
+              }}>
+                配额管理
+              </div>
+              <div style={{
+                fontSize: '16px',
+                color: '#8c8c8c'
+              }}>
+                本页面本期无改动
+              </div>
+            </div>
+          ) : selectedKey === 'forecast-card' ? (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '60vh',
+              flexDirection: 'column'
+            }}>
+              <div style={{
+                fontSize: '48px',
+                marginBottom: '24px',
+                color: '#d9d9d9'
+              }}>
+                💳
+              </div>
+              <div style={{
+                fontSize: '24px',
+                color: '#595959',
+                fontWeight: '500',
+                marginBottom: '12px'
+              }}>
+                预算卡控
+              </div>
+              <div style={{
+                fontSize: '16px',
+                color: '#8c8c8c'
+              }}>
+                本页面本期无改动
+              </div>
+            </div>
+          ) : selectedKey === 'resource-application' ? (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '60vh',
+              flexDirection: 'column'
+            }}>
+              <div style={{
+                fontSize: '48px',
+                marginBottom: '24px',
+                color: '#d9d9d9'
+              }}>
+                📝
+              </div>
+              <div style={{
+                fontSize: '24px',
+                color: '#595959',
+                fontWeight: '500',
+                marginBottom: '12px'
+              }}>
+                资源申请
+              </div>
+              <div style={{
+                fontSize: '16px',
+                color: '#8c8c8c'
+              }}>
+                改动请参考 PRD
+              </div>
+            </div>
+          ) : selectedKey === 'machine-data-analysis' || selectedKey === 'hulk-machine-access' ? (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '60vh',
+              flexDirection: 'column'
+            }}>
+              <div style={{
+                fontSize: '48px',
+                marginBottom: '24px',
+                color: '#d9d9d9'
+              }}>
+                📊
+              </div>
+              <div style={{
+                fontSize: '24px',
+                color: '#595959',
+                fontWeight: '500',
+                marginBottom: '12px'
+              }}>
+                {selectedKey === 'hulk-machine-access' ? 'Hulk机器引入' : '宿机数据分析'}
+              </div>
+              <div style={{
+                fontSize: '16px',
+                color: '#8c8c8c'
+              }}>
+                本页面本期无改动
+              </div>
+            </div>
+          ) : selectedKey === 'machine-selection' || selectedKey === 'private-cloud-machine' || selectedKey === 'weekly-report' || selectedKey === 'auto-optimization' || selectedKey === 'operation-record' ? (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '60vh',
+              flexDirection: 'column'
+            }}>
+              <div style={{
+                fontSize: '48px',
+                marginBottom: '24px',
+                color: '#d9d9d9'
+              }}>
+                🔧
+              </div>
+              <div style={{
+                fontSize: '24px',
+                color: '#595959',
+                fontWeight: '500',
+                marginBottom: '12px'
+              }}>
+                {selectedKey === 'private-cloud-machine' ? '私有云机器' :
+                 selectedKey === 'weekly-report' ? '周知报表' :
+                 selectedKey === 'auto-optimization' ? '自动优化配置' :
+                 selectedKey === 'operation-record' ? '操作记录' : '机器选型'}
+              </div>
+              <div style={{
+                fontSize: '16px',
+                color: '#8c8c8c'
+              }}>
+                本页面本期无改动
+              </div>
+            </div>
           ) : (
             <>
               {/* 筛选面板 */}
