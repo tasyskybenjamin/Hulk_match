@@ -480,10 +480,10 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                 gap: '4px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>需求峰值时刻为：{formatPeakTime(summary.peakDemandDate)}</span>
+                  <span>需求峰值时刻为：{formatPeakTime(summary.peakDemandDate)}，预计总库存：{(summary.availableInventory.total + summary.statusDistribution.delivered + summary.statusDistribution.recycled).toLocaleString()} 核</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>预计库存：{summary.peakInventory.toLocaleString()} 核</span>
+                  <span>其中预计库存：{summary.peakInventory.toLocaleString()} 核</span>
                   <span style={{
                     backgroundColor: summary.inventoryStatus === 'insufficient' ? '#fff2e8' : '#f6ffed',
                     color: summary.inventoryStatus === 'insufficient' ? '#fa8c16' : '#52c41a',
