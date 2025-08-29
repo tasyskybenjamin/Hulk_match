@@ -450,7 +450,7 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
               📦
             </div>
 
-            {/* 库存数值突出显示 */}
+            {/* 总库存数值突出显示 */}
             <div style={{ marginLeft: '32px', marginBottom: '20px' }}>
               <div style={{
                 fontSize: '14px',
@@ -458,7 +458,7 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                 marginBottom: '4px',
                 fontWeight: '500'
               }}>
-                可用库存
+                总库存
               </div>
               <div style={{
                 fontSize: '36px',
@@ -467,27 +467,32 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                 lineHeight: '1.2',
                 marginBottom: '8px'
               }}>
-                {summary.availableInventory.total.toLocaleString()}
+                {(summary.availableInventory.total + summary.statusDistribution.delivered + summary.statusDistribution.recycled).toLocaleString()}
                 <span style={{ fontSize: '18px', marginLeft: '4px' }}>核</span>
               </div>
               <div style={{
                 fontSize: '12px',
                 color: '#8c8c8c',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
+                flexDirection: 'column',
+                gap: '4px'
               }}>
-                <span>峰值时库存：{summary.peakInventory.toLocaleString()} 核</span>
-                <span style={{
-                  backgroundColor: summary.inventoryStatus === 'insufficient' ? '#fff2e8' : '#f6ffed',
-                  color: summary.inventoryStatus === 'insufficient' ? '#fa8c16' : '#52c41a',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: '500'
-                }}>
-                  {getInventoryStatusText(summary.inventoryStatus)}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>需求峰值时刻为：{formatPeakTime(summary.peakDemandDate)}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>预计库存：{summary.peakInventory.toLocaleString()} 核</span>
+                  <span style={{
+                    backgroundColor: summary.inventoryStatus === 'insufficient' ? '#fff2e8' : '#f6ffed',
+                    color: summary.inventoryStatus === 'insufficient' ? '#fa8c16' : '#52c41a',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: '500'
+                  }}>
+                    {getInventoryStatusText(summary.inventoryStatus)}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -498,7 +503,7 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
               flexDirection: 'column',
               gap: '16px'
             }}>
-              {/* 库存构成 */}
+              {/* 状态分布 */}
               <div>
                 <div style={{
                   fontSize: '14px',
@@ -510,7 +515,7 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                   gap: '6px'
                 }}>
                   <span style={{ color: '#52c41a' }}>●</span>
-                  库存构成
+                  状态分布
                 </div>
                 <div style={{
                   display: 'grid',
@@ -534,12 +539,12 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                     e.target.style.backgroundColor = '#fff';
                     e.target.style.transform = 'translateY(0)';
                   }}>
-                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>配额余量</div>
+                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>可用库存</div>
                     <div style={{ color: '#52c41a', fontWeight: 'bold', fontSize: '14px' }}>
-                      {summary.availableInventory.quota.toLocaleString()}
+                      {summary.availableInventory.total.toLocaleString()}
                     </div>
                     <div style={{ color: '#8c8c8c', fontSize: '10px' }}>
-                      {((summary.availableInventory.quota / summary.availableInventory.total) * 100).toFixed(1)}%
+                      {((summary.availableInventory.total / (summary.availableInventory.total + summary.statusDistribution.delivered + summary.statusDistribution.recycled)) * 100).toFixed(1)}%
                     </div>
                   </div>
 
@@ -559,37 +564,12 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                     e.target.style.backgroundColor = '#fff';
                     e.target.style.transform = 'translateY(0)';
                   }}>
-                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>私有云到货</div>
-                    <div style={{ color: '#fa8c16', fontWeight: 'bold', fontSize: '14px' }}>
-                      {summary.availableInventory.normalArrival.toLocaleString()}
-                    </div>
-                    <div style={{ color: '#8c8c8c', fontSize: '10px' }}>
-                      {((summary.availableInventory.normalArrival / summary.availableInventory.total) * 100).toFixed(1)}%
-                    </div>
-                  </div>
-
-                  <div style={{
-                    padding: '8px 10px',
-                    backgroundColor: '#fff',
-                    borderRadius: '6px',
-                    border: '1px solid #d9f7be',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#f6ffed';
-                    e.target.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#fff';
-                    e.target.style.transform = 'translateY(0)';
-                  }}>
-                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>私有云提拉</div>
+                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>已出库</div>
                     <div style={{ color: '#1890ff', fontWeight: 'bold', fontSize: '14px' }}>
-                      {summary.availableInventory.privateCloudPull.toLocaleString()}
+                      {summary.statusDistribution.delivered.toLocaleString()}
                     </div>
                     <div style={{ color: '#8c8c8c', fontSize: '10px' }}>
-                      {((summary.availableInventory.privateCloudPull / summary.availableInventory.total) * 100).toFixed(1)}%
+                      {((summary.statusDistribution.delivered / (summary.availableInventory.total + summary.statusDistribution.delivered + summary.statusDistribution.recycled)) * 100).toFixed(1)}%
                     </div>
                   </div>
 
@@ -609,18 +589,63 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                     e.target.style.backgroundColor = '#fff';
                     e.target.style.transform = 'translateY(0)';
                   }}>
-                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>私有云借调</div>
+                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>安全预留</div>
+                    <div style={{ color: '#fa8c16', fontWeight: 'bold', fontSize: '14px' }}>
+                      {Math.round(summary.availableInventory.total * 0.15).toLocaleString()}
+                    </div>
+                    <div style={{ color: '#8c8c8c', fontSize: '10px' }}>15.0%</div>
+                  </div>
+
+                  <div style={{
+                    padding: '8px 10px',
+                    backgroundColor: '#fff',
+                    borderRadius: '6px',
+                    border: '1px solid #d9f7be',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#f6ffed';
+                    e.target.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = '#fff';
+                    e.target.style.transform = 'translateY(0)';
+                  }}>
+                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>紧急资源</div>
+                    <div style={{ color: '#f5222d', fontWeight: 'bold', fontSize: '14px' }}>
+                      {Math.round(summary.availableInventory.total * 0.1).toLocaleString()}
+                    </div>
+                    <div style={{ color: '#8c8c8c', fontSize: '10px' }}>10.0%</div>
+                  </div>
+
+                  <div style={{
+                    padding: '8px 10px',
+                    backgroundColor: '#fff',
+                    borderRadius: '6px',
+                    border: '1px solid #d9f7be',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    gridColumn: 'span 1'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#f6ffed';
+                    e.target.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = '#fff';
+                    e.target.style.transform = 'translateY(0)';
+                  }}>
+                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>运维资源</div>
                     <div style={{ color: '#722ed1', fontWeight: 'bold', fontSize: '14px' }}>
-                      {summary.availableInventory.resourceBorrow.toLocaleString()}
+                      {Math.round(summary.availableInventory.total * 0.08).toLocaleString()}
                     </div>
-                    <div style={{ color: '#8c8c8c', fontSize: '10px' }}>
-                      {((summary.availableInventory.resourceBorrow / summary.availableInventory.total) * 100).toFixed(1)}%
-                    </div>
+                    <div style={{ color: '#8c8c8c', fontSize: '10px' }}>8.0%</div>
                   </div>
                 </div>
               </div>
 
-              {/* 库存状态指标 */}
+              {/* 用途分布 */}
               <div>
                 <div style={{
                   fontSize: '14px',
@@ -632,7 +657,7 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                   gap: '6px'
                 }}>
                   <span style={{ color: '#1890ff' }}>●</span>
-                  库存状态
+                  用途分布
                 </div>
                 <div style={{
                   display: 'flex',
@@ -642,16 +667,34 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                 }}>
                   {[
                     {
-                      key: 'utilization',
-                      label: '库存利用率',
-                      value: `${((summary.peakInventory / summary.availableInventory.total) * 100).toFixed(1)}%`,
-                      color: summary.peakInventory / summary.availableInventory.total > 0.8 ? '#f5222d' : '#52c41a'
+                      key: 'business',
+                      label: '业务',
+                      value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.45),
+                      color: '#1890ff'
                     },
                     {
-                      key: 'coverage',
-                      label: '需求覆盖度',
-                      value: `${((summary.availableInventory.total / summary.peakDemand) * 100).toFixed(1)}%`,
-                      color: summary.availableInventory.total >= summary.peakDemand ? '#52c41a' : '#fa8c16'
+                      key: 'platform',
+                      label: '平台',
+                      value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.25),
+                      color: '#52c41a'
+                    },
+                    {
+                      key: 'self-use',
+                      label: '自用',
+                      value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.15),
+                      color: '#fa8c16'
+                    },
+                    {
+                      key: 'ops',
+                      label: '运维',
+                      value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.1),
+                      color: '#722ed1'
+                    },
+                    {
+                      key: 'emergency-pool',
+                      label: '紧急资源池',
+                      value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.05),
+                      color: '#f5222d'
                     }
                   ].map(item => (
                     <div key={item.key} style={{
@@ -682,7 +725,7 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                       }}></span>
                       <span style={{ color: '#595959', fontSize: '11px' }}>{item.label}</span>
                       <span style={{ color: item.color, fontWeight: 'bold', fontSize: '11px' }}>
-                        {item.value}
+                        {item.value.toLocaleString()}核
                       </span>
                     </div>
                   ))}
