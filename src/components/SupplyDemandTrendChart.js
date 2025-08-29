@@ -136,7 +136,7 @@ const SupplyDemandTrendChart = ({ data, activeTab = 'all', filters }) => {
       // 预测数据系列（虚线）
       if (forecastData.some(d => d !== null)) {
         series.push({
-          name: dataset.label, // 使用相同的名称，这样图例中只显示一个
+          name: dataset.label + '_forecast', // 使用不同的名称避免冲突
           type: 'line',
           data: forecastData,
           lineStyle: {
@@ -152,7 +152,7 @@ const SupplyDemandTrendChart = ({ data, activeTab = 'all', filters }) => {
           symbolSize: 6,
           smooth: true,
           connectNulls: false,
-          showInLegend: false, // 不在图例中显示预测系列
+          legendHoverLink: false, // 禁用图例悬停链接
           areaStyle: dataset.key !== 'inventory' ? {
             color: {
               type: 'linear',
@@ -171,8 +171,11 @@ const SupplyDemandTrendChart = ({ data, activeTab = 'all', filters }) => {
       }
     });
 
-    // 去重图例名称
-    const uniqueLegendData = [...new Set(series.map(s => s.name))];
+    // 只显示主要系列的图例（过滤掉预测系列）
+    const mainLegendData = [...new Set(series
+      .filter(s => !s.name.includes('_forecast'))
+      .map(s => s.name)
+    )];
 
     return {
       title: {
@@ -196,13 +199,14 @@ const SupplyDemandTrendChart = ({ data, activeTab = 'all', filters }) => {
           params.forEach(param => {
             const isPast = todayIndex === -1 || param.dataIndex <= todayIndex;
             const dataType = isPast ? '历史数据' : '预测数据';
-            result += `${param.marker}${param.seriesName}: ${param.value} 核 (${dataType})<br/>`;
+            const displayName = param.seriesName.replace('_forecast', '');
+            result += `${param.marker}${displayName}: ${param.value} 核 (${dataType})<br/>`;
           });
           return result;
         }
       },
       legend: {
-        data: uniqueLegendData,
+        data: mainLegendData,
         top: 35,
         left: 'center'
       },
