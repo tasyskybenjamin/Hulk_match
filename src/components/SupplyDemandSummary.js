@@ -126,10 +126,12 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
   };
 
   const formatPeakTime = (dateStr) => {
-    // 为峰值时刻生成随机的小时和分钟
+    // 为峰值时刻生成固定的小时和分钟（基于日期字符串生成固定的随机数）
     const date = dayjs(dateStr);
-    const randomHour = Math.floor(Math.random() * 24);
-    const randomMinute = Math.floor(Math.random() * 60);
+    // 使用日期字符串作为种子来生成固定的"随机"时间
+    const seed = dateStr.split('-').reduce((acc, val) => acc + parseInt(val), 0);
+    const randomHour = seed % 24;
+    const randomMinute = (seed * 7) % 60;
     return date.hour(randomHour).minute(randomMinute).format('YYYY年MM月DD日HH点mm分');
   };
 
