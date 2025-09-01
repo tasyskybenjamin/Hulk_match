@@ -219,17 +219,7 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                <span>峰值时刻：{formatPeakTime(summary.peakDemandDate)}</span>
-                <span style={{
-                  backgroundColor: '#fff2e8',
-                  color: '#d46b08',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: '500'
-                }}>
-                  {summary.peakDemand.toLocaleString()} 核
-                </span>
+                <span>需求峰值时刻：2025年10月01日20点32分 243,344 核</span>
               </div>
             </div>
 
@@ -469,7 +459,7 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                 lineHeight: '1.2',
                 marginBottom: '8px'
               }}>
-                {(summary.availableInventory.total + summary.statusDistribution.delivered + summary.statusDistribution.recycled).toLocaleString()}
+                239,987
                 <span style={{ fontSize: '18px', marginLeft: '4px' }}>核</span>
               </div>
               <div style={{
@@ -480,21 +470,29 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                 gap: '4px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>需求峰值时刻为：{formatPeakTime(summary.peakDemandDate)}，预计总库存：{(summary.availableInventory.total + summary.statusDistribution.delivered + summary.statusDistribution.recycled).toLocaleString()} 核</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>其中可用库存：{summary.peakInventory.toLocaleString()} 核</span>
-                  <span style={{
-                    backgroundColor: summary.inventoryStatus === 'insufficient' ? '#fff2e8' : '#f6ffed',
-                    color: summary.inventoryStatus === 'insufficient' ? '#fa8c16' : '#52c41a',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    fontWeight: '500'
-                  }}>
-                    {getInventoryStatusText(summary.inventoryStatus)}
+                  <span>
+                    需求峰值时刻为：2025年10月01日20点32分，预计总库存：239,987 核
+                    {summary.inventoryStatus === 'insufficient' && (
+                      <span style={{ color: '#f5222d', fontWeight: '500' }}>（小于需求值）</span>
+                    )}
                   </span>
                 </div>
+                {/* 只有当库存大于等于需求峰值时才显示可用库存信息 */}
+                {summary.inventoryStatus !== 'insufficient' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>其中可用库存：{summary.peakInventory.toLocaleString()} 核</span>
+                    <span style={{
+                      backgroundColor: summary.inventoryStatus === 'insufficient' ? '#fff2e8' : '#f6ffed',
+                      color: summary.inventoryStatus === 'insufficient' ? '#fa8c16' : '#52c41a',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: '500'
+                    }}>
+                      {getInventoryStatusText(summary.inventoryStatus)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -781,11 +779,130 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
               </Button>
             </div>
             <div style={{ fontSize: '14px', color: '#d46b08', lineHeight: '1.6' }}>
-              时间范围内存在资源缺口，最大资源缺口：<span style={{ fontWeight: 'bold', color: '#f5222d' }}>{summary.maxGap.toLocaleString()} 核</span>，
-              时间：{formatDate(summary.maxGapDate)}
+              时间范围内存在资源缺口，最大资源缺口：<span style={{ fontWeight: 'bold', color: '#f5222d' }}>15,371 核</span>，
+              时间：2025年10月01日20点32分
             </div>
-            <div style={{ fontSize: '14px', color: '#f5222d', marginTop: '4px' }}>
-              请 Hulk 资源运营及时进行资源筹备
+            <div style={{ fontSize: '14px', color: '#d46b08', marginTop: '8px', lineHeight: '1.6' }}>
+              时间范围内筹措计划有 <span style={{ fontWeight: 'bold', color: '#1890ff' }}>3</span> 个：
+            </div>
+            <div style={{ fontSize: '14px', color: '#595959', marginTop: '4px', lineHeight: '1.6' }}>
+              已筹备 <span
+                style={{
+                  fontWeight: 'bold',
+                  color: '#52c41a',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  transition: 'all 0.2s'
+                }}
+                onClick={handleGoToProcurement}
+                onMouseEnter={(e) => {
+                  e.target.style.color = '#389e0d';
+                  e.target.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = '#52c41a';
+                  e.target.style.transform = 'scale(1)';
+                }}
+              >8,500</span> 核；
+              筹备中 <span
+                style={{
+                  fontWeight: 'bold',
+                  color: '#fa8c16',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  transition: 'all 0.2s'
+                }}
+                onClick={handleGoToProcurement}
+                onMouseEnter={(e) => {
+                  e.target.style.color = '#d46b08';
+                  e.target.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = '#fa8c16';
+                  e.target.style.transform = 'scale(1)';
+                }}
+              >4,200</span> 核；
+              待筹备 <span
+                style={{
+                  fontWeight: 'bold',
+                  color: '#f5222d',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  transition: 'all 0.2s'
+                }}
+                onClick={handleGoToProcurement}
+                onMouseEnter={(e) => {
+                  e.target.style.color = '#cf1322';
+                  e.target.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = '#f5222d';
+                  e.target.style.transform = 'scale(1)';
+                }}
+              >2,671</span> 核
+            </div>
+            <div style={{ fontSize: '14px', color: '#d46b08', marginTop: '8px', lineHeight: '1.6' }}>
+              按照筹措类型分
+            </div>
+            <div style={{ fontSize: '14px', color: '#595959', marginTop: '4px', lineHeight: '1.6' }}>
+              私有云提拉：<span
+                style={{
+                  fontWeight: 'bold',
+                  color: '#1890ff',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  transition: 'all 0.2s'
+                }}
+                onClick={handleGoToProcurement}
+                onMouseEnter={(e) => {
+                  e.target.style.color = '#096dd9';
+                  e.target.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = '#1890ff';
+                  e.target.style.transform = 'scale(1)';
+                }}
+              >10,000</span>核
+            </div>
+            <div style={{ fontSize: '14px', color: '#595959', marginTop: '4px', lineHeight: '1.6' }}>
+              私有云借调：<span
+                style={{
+                  fontWeight: 'bold',
+                  color: '#722ed1',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  transition: 'all 0.2s'
+                }}
+                onClick={handleGoToProcurement}
+                onMouseEnter={(e) => {
+                  e.target.style.color = '#531dab';
+                  e.target.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = '#722ed1';
+                  e.target.style.transform = 'scale(1)';
+                }}
+              >2,700</span>核
+            </div>
+            <div style={{ fontSize: '14px', color: '#595959', marginTop: '4px', lineHeight: '1.6' }}>
+              待发起筹措的 <span
+                style={{
+                  fontWeight: 'bold',
+                  color: '#f5222d',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  transition: 'all 0.2s'
+                }}
+                onClick={handleGoToProcurement}
+                onMouseEnter={(e) => {
+                  e.target.style.color = '#cf1322';
+                  e.target.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = '#f5222d';
+                  e.target.style.transform = 'scale(1)';
+                }}
+              >2,671</span> 核
             </div>
           </div>
         </div>
