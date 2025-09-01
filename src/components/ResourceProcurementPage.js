@@ -159,7 +159,7 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasu
         },
         {
           id: '2-2',
-          type: 'PaaS借调',
+          type: '资源盘活',
           name: '内部资源调配',
           timePoints: [
             {
@@ -170,7 +170,7 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasu
             }
           ],
           status: '处理中',
-          description: '通过PaaS平台内部资源调配，优化资源利用率'
+          description: '通过内部资源调配，优化资源利用率'
         }
       ]
     },
@@ -221,9 +221,7 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasu
   // 筹措类型选项
   const measureTypes = [
     { value: '私有云提拉', label: '私有云提拉', color: 'blue' },
-    { value: '私有云借调', label: '私有云借调', color: 'purple' },
     { value: '公有云采购', label: '公有云采购', color: 'orange' },
-    { value: 'PaaS借调', label: 'PaaS借调', color: 'geekblue' },
     { value: '资源盘活', label: '资源盘活', color: 'cyan' }
   ];
 
@@ -1201,6 +1199,15 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasu
      }, 1000);
    };
 
+   // 刷新数据
+   const handleRefreshData = () => {
+     setPlanLoading(true);
+     setTimeout(() => {
+       setPlanLoading(false);
+       message.success('数据刷新成功！');
+     }, 1000);
+   };
+
    // 获取筛选后的筹措计划数据
    const getFilteredPlanData = () => {
      let filtered = [...procurementPlans];
@@ -1387,133 +1394,301 @@ const ResourceProcurementPage = ({ onNavigateToAddMeasure, onNavigateToEditMeasu
                children: (
                  <div>
                    {/* 筹措计划统计卡片 */}
-                   <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                     <Col xs={24} sm={12} md={8}>
-                       <Card size="small">
-                         <Statistic
-                           title="总计划资源缺口"
-                           value={procurementPlans.reduce((sum, plan) => sum + plan.resourceGapMax, 0)}
-                           suffix="核"
-                           valueStyle={{ color: '#f5222d' }}
-                           formatter={(value) => value.toLocaleString()}
-                         />
+                   <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
+                     <Col xs={24} sm={12} md={6}>
+                       <Card
+                         style={{
+                           textAlign: 'center',
+                           borderRadius: '12px',
+                           border: '2px solid #f5222d',
+                           backgroundColor: '#fff2f0',
+                           height: '140px',
+                           display: 'flex',
+                           flexDirection: 'column',
+                           justifyContent: 'center',
+                           transition: 'all 0.3s ease',
+                           cursor: 'pointer'
+                         }}
+                         bodyStyle={{
+                           padding: '24px 16px',
+                           height: '100%',
+                           display: 'flex',
+                           flexDirection: 'column',
+                           justifyContent: 'center'
+                         }}
+                         hoverable
+                         onMouseEnter={(e) => {
+                           e.currentTarget.style.transform = 'translateY(-4px)';
+                           e.currentTarget.style.boxShadow = '0 8px 24px rgba(245, 34, 45, 0.2)';
+                         }}
+                         onMouseLeave={(e) => {
+                           e.currentTarget.style.transform = 'translateY(0)';
+                           e.currentTarget.style.boxShadow = 'none';
+                         }}
+                       >
+                         <div style={{ marginBottom: '12px' }}>
+                           <span style={{ fontSize: '15px', fontWeight: '600', color: '#f5222d' }}>总计算资源缺口</span>
+                         </div>
+                         <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#f5222d', marginBottom: '8px', lineHeight: '1' }}>
+                           {procurementPlans.reduce((sum, plan) => sum + plan.resourceGapMax, 0).toLocaleString()}
+                         </div>
+                         <div style={{ fontSize: '13px', color: '#666', fontWeight: '500' }}>
+                           核
+                         </div>
                        </Card>
                      </Col>
-                     <Col xs={24} sm={12} md={8}>
-                       <Card size="small">
-                         <Statistic
-                           title="已筹备"
-                           value={procurementPlans.reduce((sum, plan) => {
-                             return sum + plan.measures.reduce((measureSum, measure) => {
-                               return measureSum + measure.timePoints.reduce((pointSum, point) => {
-                                 return pointSum + (point.actualAmount || 0);
-                               }, 0);
-                             }, 0);
-                           }, 0)}
-                           suffix="核"
-                           valueStyle={{ color: '#52c41a' }}
-                           formatter={(value) => value.toLocaleString()}
-                         />
-                       </Card>
-                     </Col>
-                     <Col xs={24} sm={12} md={8}>
-                       <Card size="small">
-                         <Statistic
-                           title="待筹备/筹备中"
-                           value={procurementPlans.reduce((sum, plan) => {
-                             if (plan.status === '待筹备' || plan.status === '筹备中') {
+
+                     <Col xs={24} sm={12} md={6}>
+                       <Card
+                         style={{
+                           textAlign: 'center',
+                           borderRadius: '12px',
+                           border: '2px solid #52c41a',
+                           backgroundColor: '#f6ffed',
+                           height: '140px',
+                           display: 'flex',
+                           flexDirection: 'column',
+                           justifyContent: 'center',
+                           transition: 'all 0.3s ease',
+                           cursor: 'pointer'
+                         }}
+                         bodyStyle={{
+                           padding: '24px 16px',
+                           height: '100%',
+                           display: 'flex',
+                           flexDirection: 'column',
+                           justifyContent: 'center'
+                         }}
+                         hoverable
+                         onMouseEnter={(e) => {
+                           e.currentTarget.style.transform = 'translateY(-4px)';
+                           e.currentTarget.style.boxShadow = '0 8px 24px rgba(82, 196, 26, 0.2)';
+                         }}
+                         onMouseLeave={(e) => {
+                           e.currentTarget.style.transform = 'translateY(0)';
+                           e.currentTarget.style.boxShadow = 'none';
+                         }}
+                       >
+                         <div style={{ marginBottom: '12px' }}>
+                           <span style={{ fontSize: '15px', fontWeight: '600', color: '#52c41a' }}>已筹备</span>
+                         </div>
+                         <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#52c41a', marginBottom: '8px', lineHeight: '1' }}>
+                           {procurementPlans
+                             .reduce((sum, plan) => {
                                return sum + plan.measures.reduce((measureSum, measure) => {
                                  return measureSum + measure.timePoints.reduce((pointSum, point) => {
-                                   return pointSum + (point.expectedAmount - (point.actualAmount || 0));
+                                   // 已筹措：有实际资源到位时间和实际资源筹备量级的举措
+                                   return pointSum + (point.actualTime && point.actualAmount > 0 ? point.actualAmount : 0);
                                  }, 0);
                                }, 0);
-                             }
-                             return sum;
-                           }, 0)}
-                           suffix="核"
-                           valueStyle={{ color: '#faad14' }}
-                           formatter={(value) => value.toLocaleString()}
-                         />
+                             }, 0)
+                             .toLocaleString()}
+                         </div>
+                         <div style={{ fontSize: '13px', color: '#666', fontWeight: '500' }}>
+                           核
+                         </div>
+                       </Card>
+                     </Col>
+
+                     <Col xs={24} sm={12} md={6}>
+                       <Card
+                         style={{
+                           textAlign: 'center',
+                           borderRadius: '12px',
+                           border: '2px solid #faad14',
+                           backgroundColor: '#fffbe6',
+                           height: '140px',
+                           display: 'flex',
+                           flexDirection: 'column',
+                           justifyContent: 'center',
+                           transition: 'all 0.3s ease',
+                           cursor: 'pointer'
+                         }}
+                         bodyStyle={{
+                           padding: '24px 16px',
+                           height: '100%',
+                           display: 'flex',
+                           flexDirection: 'column',
+                           justifyContent: 'center'
+                         }}
+                         hoverable
+                         onMouseEnter={(e) => {
+                           e.currentTarget.style.transform = 'translateY(-4px)';
+                           e.currentTarget.style.boxShadow = '0 8px 24px rgba(250, 173, 20, 0.2)';
+                         }}
+                         onMouseLeave={(e) => {
+                           e.currentTarget.style.transform = 'translateY(0)';
+                           e.currentTarget.style.boxShadow = 'none';
+                         }}
+                       >
+                         <div style={{ marginBottom: '12px' }}>
+                           <span style={{ fontSize: '15px', fontWeight: '600', color: '#faad14' }}>筹备中</span>
+                         </div>
+                         <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#faad14', marginBottom: '8px', lineHeight: '1' }}>
+                           {procurementPlans
+                             .reduce((sum, plan) => {
+                               return sum + plan.measures.reduce((measureSum, measure) => {
+                                 return measureSum + measure.timePoints.reduce((pointSum, point) => {
+                                   // 筹措中：有预计资源到位时间和预计资源筹备量级的举措（但还没有实际完成）
+                                   return pointSum + (point.expectedTime && point.expectedAmount > 0 && (!point.actualTime || point.actualAmount === 0) ? point.expectedAmount : 0);
+                                 }, 0);
+                               }, 0);
+                             }, 0)
+                             .toLocaleString()}
+                         </div>
+                         <div style={{ fontSize: '13px', color: '#666', fontWeight: '500' }}>
+                           核
+                         </div>
+                       </Card>
+                     </Col>
+
+                     <Col xs={24} sm={12} md={6}>
+                       <Card
+                         style={{
+                           textAlign: 'center',
+                           borderRadius: '12px',
+                           border: '2px solid #1890ff',
+                           backgroundColor: '#e6f7ff',
+                           height: '140px',
+                           display: 'flex',
+                           flexDirection: 'column',
+                           justifyContent: 'center',
+                           transition: 'all 0.3s ease',
+                           cursor: 'pointer'
+                         }}
+                         bodyStyle={{
+                           padding: '24px 16px',
+                           height: '100%',
+                           display: 'flex',
+                           flexDirection: 'column',
+                           justifyContent: 'center'
+                         }}
+                         hoverable
+                         onMouseEnter={(e) => {
+                           e.currentTarget.style.transform = 'translateY(-4px)';
+                           e.currentTarget.style.boxShadow = '0 8px 24px rgba(24, 144, 255, 0.2)';
+                         }}
+                         onMouseLeave={(e) => {
+                           e.currentTarget.style.transform = 'translateY(0)';
+                           e.currentTarget.style.boxShadow = 'none';
+                         }}
+                       >
+                         <div style={{ marginBottom: '12px' }}>
+                           <span style={{ fontSize: '15px', fontWeight: '600', color: '#1890ff' }}>待筹备</span>
+                         </div>
+                         <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#1890ff', marginBottom: '8px', lineHeight: '1' }}>
+                           {(() => {
+                             // 计算总资源缺口
+                             const totalGap = procurementPlans.reduce((sum, plan) => sum + plan.resourceGapMax, 0);
+
+                             // 计算已筹措
+                             const completed = procurementPlans.reduce((sum, plan) => {
+                               return sum + plan.measures.reduce((measureSum, measure) => {
+                                 return measureSum + measure.timePoints.reduce((pointSum, point) => {
+                                   return pointSum + (point.actualTime && point.actualAmount > 0 ? point.actualAmount : 0);
+                                 }, 0);
+                               }, 0);
+                             }, 0);
+
+                             // 计算筹措中
+                             const inProgress = procurementPlans.reduce((sum, plan) => {
+                               return sum + plan.measures.reduce((measureSum, measure) => {
+                                 return measureSum + measure.timePoints.reduce((pointSum, point) => {
+                                   return pointSum + (point.expectedTime && point.expectedAmount > 0 && (!point.actualTime || point.actualAmount === 0) ? point.expectedAmount : 0);
+                                 }, 0);
+                               }, 0);
+                             }, 0);
+
+                             // 待筹措 = 总资源缺口 - 已筹措 - 筹措中
+                             const pending = Math.max(0, totalGap - completed - inProgress);
+                             return pending.toLocaleString();
+                           })()}
+                         </div>
+                         <div style={{ fontSize: '13px', color: '#666', fontWeight: '500' }}>
+                           核
+                         </div>
                        </Card>
                      </Col>
                    </Row>
 
-                   {/* 筹措计划筛选面板 */}
-                   <Card size="small" style={{ marginBottom: 16 }}>
-                     <Form
-                       layout="inline"
-                       onValuesChange={handlePlanFilterChange}
-                       style={{ width: '100%' }}
-                     >
-                       <Row gutter={[16, 8]} style={{ width: '100%' }}>
-                         <Col xs={24} sm={12} md={8} lg={6}>
-                           <Form.Item name="status" label="计划状态" style={{ marginBottom: 8 }}>
-                             <Select
-                               mode="multiple"
-                               placeholder="选择状态"
-                               allowClear
-                               style={{ width: '100%' }}
-                               options={planStatusOptions.map(item => ({ value: item.value, label: item.label }))}
-                             />
-                           </Form.Item>
-                         </Col>
-                         <Col xs={24} sm={12} md={8} lg={6}>
-                           <Form.Item name="datacenter" label="涉及机房" style={{ marginBottom: 8 }}>
-                             <Select
-                               mode="multiple"
-                               placeholder="选择机房"
-                               allowClear
-                               style={{ width: '100%' }}
-                               options={datacenterOptions}
-                             />
-                           </Form.Item>
-                         </Col>
-                         <Col xs={24} sm={12} md={8} lg={6}>
-                           <Form.Item name="initiator" label="发起人" style={{ marginBottom: 8 }}>
-                             <Input
-                               placeholder="输入发起人"
-                               allowClear
-                               style={{ width: '100%' }}
-                             />
-                           </Form.Item>
-                         </Col>
-                         <Col xs={24} sm={12} md={8} lg={6}>
-                           <Form.Item name="createTimeRange" label="创建时间" style={{ marginBottom: 8 }}>
-                             <DatePicker.RangePicker
-                               showTime={{ format: 'HH:mm' }}
-                               format="YYYY-MM-DD HH:mm"
-                               placeholder={['开始时间', '结束时间']}
-                               style={{ width: '100%' }}
-                             />
-                           </Form.Item>
-                         </Col>
-                         <Col xs={24} sm={12} md={8} lg={6}>
-                           <Form.Item style={{ marginBottom: 8 }}>
-                             <Space>
-                               <Button
-                                 icon={<FilterOutlined />}
-                                 onClick={handleResetPlanFilters}
-                               >
-                                 重置
-                               </Button>
-                               <Button
-                                 icon={<ExportOutlined />}
-                                 onClick={handleExportPlanData}
-                               >
-                                 导出
-                               </Button>
-                               <Button
-                                 icon={<ReloadOutlined />}
-                                 onClick={handleRefreshPlanData}
-                                 loading={planLoading}
-                               >
-                                 刷新
-                               </Button>
-                             </Space>
-                           </Form.Item>
-                         </Col>
-                       </Row>
-                     </Form>
+                   {/* 筛选和操作区域 */}
+                   <Card style={{ marginBottom: 16 }}>
+                     <Row gutter={[16, 16]} align="middle">
+                       <Col flex="auto">
+                         <Space wrap>
+                           <span style={{ fontWeight: '500' }}>计划状态：</span>
+                           <Select
+                             mode="multiple"
+                             placeholder="选择状态"
+                             style={{ minWidth: 120 }}
+                             value={planFilters.status}
+                             onChange={(value) => setPlanFilters(prev => ({ ...prev, status: value }))}
+                             allowClear
+                           >
+                             <Option value="待筹备">待筹备</Option>
+                             <Option value="筹备中">筹备中</Option>
+                             <Option value="筹备完成">筹备完成</Option>
+                           </Select>
+
+                           <span style={{ fontWeight: '500' }}>涉及机房：</span>
+                           <Select
+                             mode="multiple"
+                             placeholder="选择机房"
+                             style={{ minWidth: 120 }}
+                             value={planFilters.datacenter}
+                             onChange={(value) => setPlanFilters(prev => ({ ...prev, datacenter: value }))}
+                             allowClear
+                           >
+                             <Option value="BJ-DC1">BJ-DC1</Option>
+                             <Option value="BJ-DC2">BJ-DC2</Option>
+                             <Option value="SH-DC2">SH-DC2</Option>
+                             <Option value="GZ-DC1">GZ-DC1</Option>
+                           </Select>
+
+                           <span style={{ fontWeight: '500' }}>发起人：</span>
+                           <Input
+                             placeholder="输入发起人"
+                             style={{ width: 120 }}
+                             value={planFilters.initiator}
+                             onChange={(e) => setPlanFilters(prev => ({ ...prev, initiator: e.target.value }))}
+                             allowClear
+                           />
+
+                           <span style={{ fontWeight: '500' }}>创建时间：</span>
+                           <DatePicker.RangePicker
+                             placeholder={['开始时间', '结束时间']}
+                             value={planFilters.createTimeRange}
+                             onChange={(value) => setPlanFilters(prev => ({ ...prev, createTimeRange: value }))}
+                           />
+                         </Space>
+                       </Col>
+                       <Col>
+                         <Space>
+                           <Button
+                             icon={<FilterOutlined />}
+                             onClick={() => setPlanFilters({
+                               status: [],
+                               datacenter: [],
+                               initiator: '',
+                               createTimeRange: null,
+                               resourceGapRange: [null, null]
+                             })}
+                           >
+                             重置
+                           </Button>
+                           <Button icon={<ExportOutlined />}>
+                             导出
+                           </Button>
+                           <Button
+                             icon={<ReloadOutlined />}
+                             onClick={handleRefreshData}
+                             loading={planLoading}
+                           >
+                             刷新
+                           </Button>
+                         </Space>
+                       </Col>
+                     </Row>
                    </Card>
 
                    <Table

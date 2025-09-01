@@ -21,7 +21,9 @@ import {
   SettingOutlined,
   PlusOutlined,
   ArrowLeftOutlined,
-  CloudServerOutlined
+  CloudServerOutlined,
+  MinusCircleOutlined,
+  DeleteOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import './ResourceProcurementPage.css';
@@ -36,13 +38,36 @@ const AddMeasurePage = ({ planId, onNavigateBack }) => {
   const [selectedProcurementIds, setSelectedProcurementIds] = useState([]);
   const [procurementTableVisible, setProcurementTableVisible] = useState(false);
 
+  // 时间点组合管理状态
+  const [timePoints, setTimePoints] = useState([
+    {
+      id: 1,
+      expectedTime: null,
+      expectedDatacenter: null,
+      expectedAmount: null,
+      actualTime: null,
+      actualDatacenter: [],
+      actualAmount: null
+    }
+  ]);
+
+  // 资源缺口数据（模拟从父组件传入的计划数据）
+  const [resourceGapData] = useState({
+    planId: planId,
+    resourceGapMax: 5000,
+    gapStartTime: '2024-12-25 09:00',
+    gapEndTime: '2024-12-28 18:00',
+    datacenterGaps: {
+      'BJ-DC1': 2000,
+      'BJ-DC2': 1500,
+      'SH-DC2': 1500
+    }
+  });
+
   // 筹措类型选项
   const measureTypes = [
     { value: '私有云提拉', label: '私有云提拉', color: 'blue' },
-    { value: '私有云到货', label: '私有云到货', color: 'green' },
-    { value: '私有云借调', label: '私有云借调', color: 'purple' },
     { value: '公有云采购', label: '公有云采购', color: 'orange' },
-    { value: 'PaaS借调', label: 'PaaS借调', color: 'geekblue' },
     { value: '资源盘活', label: '资源盘活', color: 'cyan' }
   ];
 
@@ -52,6 +77,49 @@ const AddMeasurePage = ({ planId, onNavigateBack }) => {
     { value: '完成', label: '完成', color: 'success' },
     { value: '取消', label: '取消', color: 'error' }
   ];
+
+  // 机房选项
+  const datacenterOptions = [
+    { value: 'BJ-DC1', label: 'BJ-DC1', region: '北京' },
+    { value: 'BJ-DC2', label: 'BJ-DC2', region: '北京' },
+    { value: 'BJ-DC3', label: 'BJ-DC3', region: '北京' },
+    { value: 'SH-DC1', label: 'SH-DC1', region: '上海' },
+    { value: 'SH-DC2', label: 'SH-DC2', region: '上海' },
+    { value: 'GZ-DC1', label: 'GZ-DC1', region: '广州' },
+    { value: 'GZ-DC2', label: 'GZ-DC2', region: '广州' },
+    { value: 'SZ-DC1', label: 'SZ-DC1', region: '深圳' },
+    { value: 'HL-DC1', label: 'HL-DC1', region: '怀来' },
+    { value: 'HL-DC2', label: 'HL-DC2', region: '怀来' },
+    { value: 'OTHER', label: '其他', region: '其他' }
+  ];
+
+  // 添加时间点组合
+  const addTimePoint = () => {
+    const newId = Math.max(...timePoints.map(tp => tp.id)) + 1;
+    setTimePoints([...timePoints, {
+      id: newId,
+      expectedTime: null,
+      expectedDatacenter: null,
+      expectedAmount: null,
+      actualTime: null,
+      actualDatacenter: [],
+      actualAmount: null
+    }]);
+  };
+
+  // 删除时间点组合
+  const removeTimePoint = (id) => {
+    if (timePoints.length > 1) {
+      setTimePoints(timePoints.filter(tp => tp.id !== id));
+    }
+  };
+
+  // 更新时间点数据
+  const updateTimePoint = (id, field, value) => {
+    setTimePoints(timePoints.map(tp =>
+      tp.id === id ? { ...tp, [field]: value } : tp
+    ));
+  };
 
   // 私有云采购与提拉数据模拟数据
   const [procurementData] = useState([
@@ -162,22 +230,6 @@ const AddMeasurePage = ({ planId, onNavigateBack }) => {
     });
   };
 
-  // 统一修改采购到货时间
-  const handleBatchUpdateArrivalTime = () => {
-    const expectedTime = measureForm.getFieldValue('expectedTime');
-    if (!expectedTime) {
-      message.warning('请先选择预计资源到位时间！');
-      return;
-    }
-
-    if (selectedProcurementIds.length === 0) {
-      message.warning('请先选择采购单！');
-      return;
-    }
-
-    const newArrivalTime = expectedTime.format('YYYY-MM-DD HH:mm');
-    message.success(`已将 ${selectedProcurementIds.length} 个采购单的到货时间更新为：${newArrivalTime}`);
-  };
 
   // 私有云采购单选择表格列配置
   const procurementSelectionColumns = [
@@ -291,13 +343,29 @@ const AddMeasurePage = ({ planId, onNavigateBack }) => {
     try {
       const values = await measureForm.validateFields();
 
+      // 验证时间点数据
+      const validTimePoints = timePoints.filter(tp =>
+        tp.expectedTime && tp.expectedAmount && tp.expectedDatacenter
+      );
+
+      if (validTimePoints.length === 0) {
+        message.error('请至少填写一个完整的时间点信息（预计时间、机房、量级）');
+        return;
+      }
+
+      // 格式化时间点数据
+      const formattedTimePoints = timePoints.map(tp => ({
+        ...tp,
+        expectedTime: tp.expectedTime ? dayjs(tp.expectedTime).format('YYYY-MM-DD HH:mm') : null,
+        actualTime: tp.actualTime ? dayjs(tp.actualTime).format('YYYY-MM-DD HH:mm') : null
+      }));
+
       // 这里可以调用API保存数据
       console.log('提交的数据:', {
         ...values,
         planId,
         selectedProcurementIds,
-        expectedTime: values.expectedTime?.format('YYYY-MM-DD HH:mm'),
-        actualTime: values.actualTime?.format('YYYY-MM-DD HH:mm')
+        timePoints: formattedTimePoints
       });
 
       message.success('筹措举措添加成功！');
@@ -368,6 +436,70 @@ const AddMeasurePage = ({ planId, onNavigateBack }) => {
         </div>
       </Card>
 
+      {/* 资源缺口数据显示 */}
+      <Card title="当前资源缺口情况" style={{ marginBottom: 16 }}>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} md={6}>
+            <Card size="small" style={{ textAlign: 'center', backgroundColor: '#fff2f0' }}>
+              <Statistic
+                title="总资源缺口"
+                value={resourceGapData.resourceGapMax}
+                suffix="核"
+                valueStyle={{ color: '#f5222d', fontSize: '18px' }}
+                formatter={(value) => value.toLocaleString()}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card size="small" style={{ textAlign: 'center', backgroundColor: '#fff7e6' }}>
+              <Statistic
+                title="待筹措资源数量"
+                value={(() => {
+                  // 计算已筹措的资源量级（实际完成的）
+                  const completedAmount = timePoints.reduce((sum, tp) => {
+                    return sum + (tp.actualAmount || 0);
+                  }, 0);
+
+                  // 计算筹措中的资源量级（预计但未完成的）
+                  const inProgressAmount = timePoints.reduce((sum, tp) => {
+                    return sum + (tp.expectedAmount && !tp.actualAmount ? tp.expectedAmount : 0);
+                  }, 0);
+
+                  // 待筹措 = 总缺口 - 已筹措 - 筹措中
+                  return Math.max(0, resourceGapData.resourceGapMax - completedAmount - inProgressAmount);
+                })()}
+                suffix="核"
+                valueStyle={{ color: '#faad14', fontSize: '18px' }}
+                formatter={(value) => value.toLocaleString()}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card size="small" style={{ textAlign: 'center', backgroundColor: '#f6ffed' }}>
+              <Statistic
+                title="缺口时间段"
+                value={`${resourceGapData.gapStartTime} 至 ${resourceGapData.gapEndTime}`}
+                valueStyle={{ color: '#52c41a', fontSize: '12px' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card size="small" style={{ backgroundColor: '#e6f7ff' }}>
+              <div style={{ marginBottom: '8px', fontWeight: 'bold', color: '#1890ff' }}>
+                各机房资源缺口详情：
+              </div>
+              <Space wrap>
+                {Object.entries(resourceGapData.datacenterGaps).map(([datacenter, gap]) => (
+                  <Tag key={datacenter} color="blue" style={{ margin: '2px' }}>
+                    {datacenter}: {gap.toLocaleString()} 核
+                  </Tag>
+                ))}
+              </Space>
+            </Card>
+          </Col>
+        </Row>
+      </Card>
+
       {/* 表单内容 */}
       <Card title="举措信息">
         <Form form={measureForm} layout="vertical" style={{ maxWidth: 800 }}>
@@ -420,18 +552,9 @@ const AddMeasurePage = ({ planId, onNavigateBack }) => {
                      （仅显示状态为"在途"的采购单）
                    </span>
                  </div>
-                <Space>
-                  <Button
-                    size="small"
-                    onClick={handleBatchUpdateArrivalTime}
-                    disabled={selectedProcurementIds.length === 0}
-                  >
-                    统一修改到货时间
-                  </Button>
-                  <span style={{ fontSize: '12px', color: '#666' }}>
-                    已选择 {selectedProcurementIds.length} 个采购单
-                  </span>
-                </Space>
+                <span style={{ fontSize: '12px', color: '#666' }}>
+                  已选择 {selectedProcurementIds.length} 个采购单
+                </span>
               </div>
 
                <div style={{
@@ -489,67 +612,169 @@ const AddMeasurePage = ({ planId, onNavigateBack }) => {
             <Input placeholder="请输入举措名称（不超过20字符）" maxLength={20} showCount />
           </Form.Item>
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="expectedTime"
-                label="预计资源到位时间"
-                rules={[{ required: true, message: '请选择预计到位时间' }]}
+          {/* 时间点组合 */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 16
+            }}>
+              <h3 style={{ margin: 0, color: '#1890ff' }}>📅 时间点详情</h3>
+              <Button
+                type="dashed"
+                icon={<PlusOutlined />}
+                onClick={addTimePoint}
+                size="small"
               >
-                <DatePicker
-                  showTime={{ format: 'HH:mm' }}
-                  format="YYYY-MM-DD HH:mm"
-                  style={{ width: '100%' }}
-                  placeholder="请选择预计到位时间"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="expectedAmount"
-                label="预计资源筹备量级（核）"
-                rules={[{ required: true, message: '请输入预计筹备量级' }]}
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={1}
-                  placeholder="请输入预计筹备量级"
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+                添加时间点
+              </Button>
+            </div>
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="actualTime"
-                label="实际资源到位时间"
+            {timePoints.map((timePoint, index) => (
+              <Card
+                key={timePoint.id}
+                size="small"
+                style={{
+                  marginBottom: 16,
+                  border: '1px solid #d9d9d9',
+                  borderRadius: '8px'
+                }}
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>时间点 {index + 1}</span>
+                    {timePoints.length > 1 && (
+                      <Button
+                        type="text"
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={() => removeTimePoint(timePoint.id)}
+                      >
+                        删除
+                      </Button>
+                    )}
+                  </div>
+                }
               >
-                <DatePicker
-                  showTime={{ format: 'HH:mm' }}
-                  format="YYYY-MM-DD HH:mm"
-                  style={{ width: '100%' }}
-                  placeholder="请选择实际到位时间"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="actualAmount"
-                label="实际资源筹备量级（核）"
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={0}
-                  placeholder="请输入实际筹备量级"
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+                {/* 预计信息 */}
+                <div style={{
+                  backgroundColor: '#f0f9ff',
+                  padding: '12px',
+                  borderRadius: '6px',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{ marginBottom: '8px', fontWeight: 'bold', color: '#1890ff' }}>
+                    📋 预计信息
+                  </div>
+                  <Row gutter={8}>
+                    <Col span={8}>
+                      <div style={{ marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                        预计资源到位时间 <span style={{ color: '#f5222d' }}>*</span>
+                      </div>
+                      <DatePicker
+                        showTime={{ format: 'HH:mm' }}
+                        format="YYYY-MM-DD HH:mm"
+                        style={{ width: '100%' }}
+                        placeholder="选择预计时间"
+                        value={timePoint.expectedTime ? dayjs(timePoint.expectedTime) : null}
+                        onChange={(value) => updateTimePoint(timePoint.id, 'expectedTime', value)}
+                      />
+                    </Col>
+                    <Col span={8}>
+                      <div style={{ marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                        预计到货机房 <span style={{ color: '#f5222d' }}>*</span>
+                      </div>
+                      <Select
+                        style={{ width: '100%' }}
+                        placeholder="选择机房"
+                        value={timePoint.expectedDatacenter}
+                        onChange={(value) => updateTimePoint(timePoint.id, 'expectedDatacenter', value)}
+                      >
+                        {datacenterOptions.map(dc => (
+                          <Option key={dc.value} value={dc.value}>
+                            {dc.label}
+                          </Option>
+                        ))}
+                      </Select>
+                    </Col>
+                    <Col span={8}>
+                      <div style={{ marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                        预计资源筹备量级（核）<span style={{ color: '#f5222d' }}>*</span>
+                      </div>
+                      <InputNumber
+                        style={{ width: '100%' }}
+                        min={1}
+                        placeholder="输入预计量级"
+                        value={timePoint.expectedAmount}
+                        onChange={(value) => updateTimePoint(timePoint.id, 'expectedAmount', value)}
+                        formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                        parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                      />
+                    </Col>
+                  </Row>
+                </div>
+
+                {/* 实际信息 */}
+                <div style={{
+                  backgroundColor: '#f6ffed',
+                  padding: '12px',
+                  borderRadius: '6px'
+                }}>
+                  <div style={{ marginBottom: '8px', fontWeight: 'bold', color: '#52c41a' }}>
+                    ✅ 实际信息
+                  </div>
+                  <Row gutter={8}>
+                    <Col span={8}>
+                      <div style={{ marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                        实际资源到位时间
+                      </div>
+                      <DatePicker
+                        showTime={{ format: 'HH:mm' }}
+                        format="YYYY-MM-DD HH:mm"
+                        style={{ width: '100%' }}
+                        placeholder="选择实际时间"
+                        value={timePoint.actualTime ? dayjs(timePoint.actualTime) : null}
+                        onChange={(value) => updateTimePoint(timePoint.id, 'actualTime', value)}
+                      />
+                    </Col>
+                    <Col span={8}>
+                      <div style={{ marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                        实际到货机房
+                      </div>
+                      <Select
+                        mode="multiple"
+                        style={{ width: '100%' }}
+                        placeholder="选择机房"
+                        value={timePoint.actualDatacenter}
+                        onChange={(value) => updateTimePoint(timePoint.id, 'actualDatacenter', value)}
+                      >
+                        {datacenterOptions.map(dc => (
+                          <Option key={dc.value} value={dc.value}>
+                            {dc.label}
+                          </Option>
+                        ))}
+                      </Select>
+                    </Col>
+                    <Col span={8}>
+                      <div style={{ marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                        实际资源筹备量级（核）
+                      </div>
+                      <InputNumber
+                        style={{ width: '100%' }}
+                        min={0}
+                        placeholder="输入实际量级"
+                        value={timePoint.actualAmount}
+                        onChange={(value) => updateTimePoint(timePoint.id, 'actualAmount', value)}
+                        formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                        parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                      />
+                    </Col>
+                  </Row>
+                </div>
+              </Card>
+            ))}
+          </div>
 
           <Form.Item
             name="description"
