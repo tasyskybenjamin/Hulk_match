@@ -231,8 +231,8 @@ const SupplyDemandMatchingPage = ({ onNavigateToResourceProcurement }) => {
   const handleReset = () => {
     const resetFilters = {
       dateRange: [
-        dayjs().subtract(1, 'month').startOf('day'),
-        dayjs().add(1, 'month').endOf('day').subtract(11, 'seconds')
+        dayjs().startOf('day'), // 当天开始 00:00:00
+        dayjs().add(1, 'month').endOf('day').subtract(11, 'seconds') // 未来1个月结束 23:59:49
       ],
       clusterGroup: [], // 默认不选中
       specialZone: [],
@@ -277,13 +277,13 @@ const SupplyDemandMatchingPage = ({ onNavigateToResourceProcurement }) => {
       demandMultiplier *= Math.max(0.4, productFactor);
     }
 
-    // 基础值和趋势参数（应用筛选条件影响）
-    let availableInventoryBase = Math.round(6800 * inventoryMultiplier); // 降低基础库存，更容易出现缺口
-    let deliveredInventoryBase = Math.round(1500 * inventoryMultiplier);
-    let pendingBase = Math.round(200 * demandMultiplier); // 增加基础需求
-    let confirmedBase = Math.round(450 * demandMultiplier); // 增加基础需求
-    let deliveredDemandBase = Math.round(1200 * demandMultiplier);
-    let totalDemandBase = Math.round(1800 * demandMultiplier); // 总需求基础值
+    // 基础值和趋势参数（应用筛选条件影响）- 十万量级虚拟化资源
+    let availableInventoryBase = Math.round(80000 * inventoryMultiplier); // 8万核基础库存
+    let deliveredInventoryBase = Math.round(20000 * inventoryMultiplier); // 2万核已交付库存
+    let pendingBase = Math.round(5000 * demandMultiplier); // 5千核基础待评估需求
+    let confirmedBase = Math.round(8000 * demandMultiplier); // 8千核基础确认待交付需求
+    let deliveredDemandBase = Math.round(15000 * demandMultiplier); // 1.5万核已交付需求
+    let totalDemandBase = Math.round(28000 * demandMultiplier); // 2.8万核总需求基础值
 
     // 根据用户选择的时间范围生成数据
     const startDate = filterParams.dateRange ? filterParams.dateRange[0] : dayjs().subtract(1, 'month');
@@ -323,11 +323,11 @@ const SupplyDemandMatchingPage = ({ onNavigateToResourceProcurement }) => {
       const lowEnd = Math.floor(totalDays * 0.4); // 在40%的位置结束低谷
 
       if (index >= peakStart && index <= peakEnd) {
-        // 高峰期需求增加1.5-2.5倍
-        demandSpikeFactor = 1.5 + Math.sin((index - peakStart) / (peakEnd - peakStart) * Math.PI) * 1.0;
+        // 高峰期需求增加2.0-3.5倍，达到十万量级峰值
+        demandSpikeFactor = 2.0 + Math.sin((index - peakStart) / (peakEnd - peakStart) * Math.PI) * 1.5;
       } else if (index >= lowStart && index <= lowEnd) {
-        // 低谷期需求减少到0.3-0.7倍
-        demandSpikeFactor = 0.5 - Math.sin((index - lowStart) / (lowEnd - lowStart) * Math.PI) * 0.2;
+        // 低谷期需求减少到0.4-0.8倍
+        demandSpikeFactor = 0.6 - Math.sin((index - lowStart) / (lowEnd - lowStart) * Math.PI) * 0.2;
       }
 
       // 创建库存波动（模拟供应链问题、维护等）

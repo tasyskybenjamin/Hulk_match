@@ -731,6 +731,7 @@ const DemandManagementPage = () => {
                   </div>
                 </Card>
               </Col>
+
             </Row>
           </Card>
         </Col>

@@ -1,7 +1,26 @@
 import React from 'react';
-import { Card, Row, Col, Statistic, Alert, Tag, Button } from 'antd';
-import { WarningOutlined, CheckCircleOutlined, SettingOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Statistic, Alert, Tag, Button, Tooltip } from 'antd';
+import { WarningOutlined, CheckCircleOutlined, SettingOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+
+// 添加CSS样式
+const styles = `
+  .status-card-hover:hover {
+    background-color: #ffefd6 !important;
+    transform: translateY(-1px);
+  }
+`;
+
+// 将样式注入到页面中
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.type = 'text/css';
+  styleSheet.innerText = styles;
+  if (!document.head.querySelector('style[data-status-card-hover]')) {
+    styleSheet.setAttribute('data-status-card-hover', 'true');
+    document.head.appendChild(styleSheet);
+  }
+}
 
 const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement }) => {
   if (!data || !data.datasets) {
@@ -29,24 +48,26 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
     const todayIndex = data.labels.findIndex(label => label === today);
 
     // 计算需求相关数据
-    const totalDemandSum = totalDemand.data.reduce((sum, point) => sum + point.value, 0);
     const peakDemand = Math.max(...totalDemand.data.map(point => point.value));
     const peakDemandIndex = totalDemand.data.findIndex(point => point.value === peakDemand);
     const peakDemandDate = data.labels[peakDemandIndex];
 
-    // 状态分布（模拟数据）
-    const pendingSum = pendingDemand.data.reduce((sum, point) => sum + point.value, 0);
-    const confirmedSum = confirmedDemand.data.reduce((sum, point) => sum + point.value, 0);
-    const deliveredSum = Math.round(totalDemandSum * 0.6); // 模拟已交付
-    const recycledSum = Math.round(totalDemandSum * 0.1); // 模拟已回收
-    const rejectedSum = Math.round(totalDemandSum * 0.05); // 模拟驳回
+    // 总需求应该等于峰值需求，这样逻辑才合理
+    const totalDemandSum = peakDemand;
 
-    // 渠道分布（模拟数据）
-    const dailyDemand = Math.round(totalDemandSum * 0.4);
-    const activityDemand = Math.round(totalDemandSum * 0.3);
-    const emergencyDemand = Math.round(totalDemandSum * 0.15);
-    const specialDemand = Math.round(totalDemandSum * 0.1);
-    const poolDemand = Math.round(totalDemandSum * 0.05);
+    // 状态分布（基于峰值需求计算）
+    const pendingSum = Math.round(peakDemand * 0.25); // 25%待评估
+    const confirmedSum = Math.round(peakDemand * 0.35); // 35%确认待交付
+    const deliveredSum = Math.round(peakDemand * 0.3); // 30%已交付
+    const recycledSum = Math.round(peakDemand * 0.08); // 8%已回收
+    const rejectedSum = Math.round(peakDemand * 0.02); // 2%驳回
+
+    // 渠道分布（基于峰值需求计算）
+    const dailyDemand = Math.round(peakDemand * 0.4);
+    const activityDemand = Math.round(peakDemand * 0.3);
+    const emergencyDemand = Math.round(peakDemand * 0.15);
+    const specialDemand = Math.round(peakDemand * 0.1);
+    const poolDemand = Math.round(peakDemand * 0.05);
 
     // 库存相关数据
     const peakInventory = inventory.data[peakDemandIndex]?.value || 0;
@@ -250,103 +271,91 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                   gap: '8px',
                   fontSize: '13px'
                 }}>
-                  <div style={{
-                    padding: '8px 10px',
-                    backgroundColor: '#fff',
-                    borderRadius: '6px',
-                    border: '1px solid #ffe7ba',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#ffefd6';
-                    e.target.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#fff';
-                    e.target.style.transform = 'translateY(0)';
-                  }}>
-                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>待评估</div>
+                  <div
+                    className="status-card-hover"
+                    style={{
+                      padding: '8px 10px',
+                      backgroundColor: '#fff',
+                      borderRadius: '6px',
+                      border: '1px solid #ffe7ba',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div style={{
+                      color: '#8c8c8c',
+                      fontSize: '11px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      待满足需求
+                      <Tooltip
+                        title={
+                          <div>
+                            <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>待满足需求包含：</div>
+                            <div style={{ marginBottom: '2px' }}>• 待评估：{summary.statusDistribution.pending.toLocaleString()} 核</div>
+                            <div>• 确认待交付：{summary.statusDistribution.confirmed.toLocaleString()} 核</div>
+                          </div>
+                        }
+                        placement="top"
+                      >
+                        <InfoCircleOutlined style={{
+                          fontSize: '10px',
+                          color: '#999',
+                          cursor: 'help'
+                        }} />
+                      </Tooltip>
+                    </div>
                     <div style={{ color: '#fa8c16', fontWeight: 'bold', fontSize: '14px' }}>
-                      {summary.statusDistribution.pending.toLocaleString()}
+                      {(summary.statusDistribution.pending + summary.statusDistribution.confirmed).toLocaleString()}
                     </div>
                     <div style={{ color: '#8c8c8c', fontSize: '10px' }}>
-                      {((summary.statusDistribution.pending / summary.totalDemandSum) * 100).toFixed(1)}%
+                      {(((summary.statusDistribution.pending + summary.statusDistribution.confirmed) / summary.totalDemandSum) * 100).toFixed(1)}%
                     </div>
                   </div>
 
-                  <div style={{
-                    padding: '8px 10px',
-                    backgroundColor: '#fff',
-                    borderRadius: '6px',
-                    border: '1px solid #ffe7ba',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#ffefd6';
-                    e.target.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#fff';
-                    e.target.style.transform = 'translateY(0)';
-                  }}>
-                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>确认待交付</div>
-                    <div style={{ color: '#f5222d', fontWeight: 'bold', fontSize: '14px' }}>
-                      {summary.statusDistribution.confirmed.toLocaleString()}
+                  <div
+                    className="status-card-hover"
+                    style={{
+                      padding: '8px 10px',
+                      backgroundColor: '#fff',
+                      borderRadius: '6px',
+                      border: '1px solid #ffe7ba',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div style={{
+                      color: '#8c8c8c',
+                      fontSize: '11px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      已满足需求
+                      <Tooltip
+                        title={
+                          <div>
+                            <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>已满足需求包含：</div>
+                            <div style={{ marginBottom: '2px' }}>• 已交付：{summary.statusDistribution.delivered.toLocaleString()} 核</div>
+                            <div>• 已回收：{summary.statusDistribution.recycled.toLocaleString()} 核</div>
+                          </div>
+                        }
+                        placement="top"
+                      >
+                        <InfoCircleOutlined style={{
+                          fontSize: '10px',
+                          color: '#999',
+                          cursor: 'help'
+                        }} />
+                      </Tooltip>
                     </div>
-                    <div style={{ color: '#8c8c8c', fontSize: '10px' }}>
-                      {((summary.statusDistribution.confirmed / summary.totalDemandSum) * 100).toFixed(1)}%
-                    </div>
-                  </div>
-
-                  <div style={{
-                    padding: '8px 10px',
-                    backgroundColor: '#fff',
-                    borderRadius: '6px',
-                    border: '1px solid #ffe7ba',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#ffefd6';
-                    e.target.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#fff';
-                    e.target.style.transform = 'translateY(0)';
-                  }}>
-                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>已交付</div>
                     <div style={{ color: '#52c41a', fontWeight: 'bold', fontSize: '14px' }}>
-                      {summary.statusDistribution.delivered.toLocaleString()}
+                      {(summary.statusDistribution.delivered + summary.statusDistribution.recycled).toLocaleString()}
                     </div>
                     <div style={{ color: '#8c8c8c', fontSize: '10px' }}>
-                      {((summary.statusDistribution.delivered / (summary.totalDemandSum + summary.statusDistribution.delivered + summary.statusDistribution.recycled)) * 100).toFixed(1)}%
-                    </div>
-                  </div>
-
-                  <div style={{
-                    padding: '8px 10px',
-                    backgroundColor: '#fff',
-                    borderRadius: '6px',
-                    border: '1px solid #ffe7ba',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#ffefd6';
-                    e.target.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#fff';
-                    e.target.style.transform = 'translateY(0)';
-                  }}>
-                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>已回收</div>
-                    <div style={{ color: '#1890ff', fontWeight: 'bold', fontSize: '14px' }}>
-                      {summary.statusDistribution.recycled.toLocaleString()}
-                    </div>
-                    <div style={{ color: '#8c8c8c', fontSize: '10px' }}>
-                      {((summary.statusDistribution.recycled / (summary.totalDemandSum + summary.statusDistribution.delivered + summary.statusDistribution.recycled)) * 100).toFixed(1)}%
+                      {(((summary.statusDistribution.delivered + summary.statusDistribution.recycled) / (summary.totalDemandSum + summary.statusDistribution.delivered + summary.statusDistribution.recycled)) * 100).toFixed(1)}%
                     </div>
                   </div>
                 </div>
@@ -503,7 +512,7 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
               flexDirection: 'column',
               gap: '16px'
             }}>
-              {/* 状态分布 */}
+              {/* 类型分布 */}
               <div>
                 <div style={{
                   fontSize: '14px',
@@ -515,7 +524,7 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                   gap: '6px'
                 }}>
                   <span style={{ color: '#52c41a' }}>●</span>
-                  状态分布
+                  类型分布
                 </div>
                 <div style={{
                   display: 'grid',
@@ -573,74 +582,49 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                     </div>
                   </div>
 
-                  <div style={{
-                    padding: '8px 10px',
-                    backgroundColor: '#fff',
-                    borderRadius: '6px',
-                    border: '1px solid #d9f7be',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#f6ffed';
-                    e.target.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#fff';
-                    e.target.style.transform = 'translateY(0)';
-                  }}>
-                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>安全预留</div>
-                    <div style={{ color: '#fa8c16', fontWeight: 'bold', fontSize: '14px' }}>
-                      {Math.round(summary.availableInventory.total * 0.15).toLocaleString()}
+                  <div
+                    className="status-card-hover"
+                    style={{
+                      padding: '8px 10px',
+                      backgroundColor: '#fff',
+                      borderRadius: '6px',
+                      border: '1px solid #d9f7be',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div style={{
+                      color: '#8c8c8c',
+                      fontSize: '11px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      其他库存
+                      <Tooltip
+                        title={
+                          <div>
+                            <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>其他库存包含：</div>
+                            <div style={{ marginBottom: '2px' }}>• 安全预留：{Math.round(summary.availableInventory.total * 0.15).toLocaleString()} 核</div>
+                            <div style={{ marginBottom: '2px' }}>• 紧急资源：{Math.round(summary.availableInventory.total * 0.1).toLocaleString()} 核</div>
+                            <div>• 运维资源：{Math.round(summary.availableInventory.total * 0.08).toLocaleString()} 核</div>
+                          </div>
+                        }
+                        placement="top"
+                      >
+                        <InfoCircleOutlined style={{
+                          fontSize: '10px',
+                          color: '#999',
+                          cursor: 'help'
+                        }} />
+                      </Tooltip>
                     </div>
-                    <div style={{ color: '#8c8c8c', fontSize: '10px' }}>15.0%</div>
-                  </div>
-
-                  <div style={{
-                    padding: '8px 10px',
-                    backgroundColor: '#fff',
-                    borderRadius: '6px',
-                    border: '1px solid #d9f7be',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#f6ffed';
-                    e.target.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#fff';
-                    e.target.style.transform = 'translateY(0)';
-                  }}>
-                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>紧急资源</div>
-                    <div style={{ color: '#f5222d', fontWeight: 'bold', fontSize: '14px' }}>
-                      {Math.round(summary.availableInventory.total * 0.1).toLocaleString()}
-                    </div>
-                    <div style={{ color: '#8c8c8c', fontSize: '10px' }}>10.0%</div>
-                  </div>
-
-                  <div style={{
-                    padding: '8px 10px',
-                    backgroundColor: '#fff',
-                    borderRadius: '6px',
-                    border: '1px solid #d9f7be',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    gridColumn: 'span 1'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#f6ffed';
-                    e.target.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#fff';
-                    e.target.style.transform = 'translateY(0)';
-                  }}>
-                    <div style={{ color: '#8c8c8c', fontSize: '11px' }}>运维资源</div>
                     <div style={{ color: '#722ed1', fontWeight: 'bold', fontSize: '14px' }}>
-                      {Math.round(summary.availableInventory.total * 0.08).toLocaleString()}
+                      {Math.round(summary.availableInventory.total * (0.15 + 0.1 + 0.08)).toLocaleString()}
                     </div>
-                    <div style={{ color: '#8c8c8c', fontSize: '10px' }}>8.0%</div>
+                    <div style={{ color: '#8c8c8c', fontSize: '10px' }}>
+                      {((0.15 + 0.1 + 0.08) * 100).toFixed(1)}%
+                    </div>
                   </div>
                 </div>
               </div>
@@ -679,54 +663,106 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                       color: '#52c41a'
                     },
                     {
-                      key: 'self-use',
-                      label: '自用',
-                      value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.15),
-                      color: '#fa8c16'
-                    },
-                    {
-                      key: 'ops',
-                      label: '运维',
-                      value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.1),
-                      color: '#722ed1'
-                    },
-                    {
-                      key: 'emergency-pool',
-                      label: '紧急资源池',
-                      value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.05),
-                      color: '#f5222d'
+                      key: 'others',
+                      label: '其他',
+                      value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * (0.15 + 0.1 + 0.05)),
+                      color: '#722ed1',
+                      tooltip: {
+                        title: '其他用途包含：',
+                        items: [
+                          { label: '自用', value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.15) },
+                          { label: '运维', value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.1) },
+                          { label: '紧急资源池', value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.05) }
+                        ]
+                      }
                     }
                   ].map(item => (
-                    <div key={item.key} style={{
-                      padding: '6px 10px',
-                      backgroundColor: '#fff',
-                      borderRadius: '16px',
-                      border: '1px solid #d9f7be',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      minWidth: 'fit-content'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#f6ffed';
-                      e.target.style.transform = 'scale(1.05)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#fff';
-                      e.target.style.transform = 'scale(1)';
-                    }}>
-                      <span style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        backgroundColor: item.color
-                      }}></span>
-                      <span style={{ color: '#595959', fontSize: '11px' }}>{item.label}</span>
-                      <span style={{ color: item.color, fontWeight: 'bold', fontSize: '11px' }}>
-                        {item.value.toLocaleString()}核
-                      </span>
+                    <div key={item.key}>
+                      {item.tooltip ? (
+                        <Tooltip
+                          title={
+                            <div>
+                              <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>{item.tooltip.title}</div>
+                              {item.tooltip.items.map((tooltipItem, index) => (
+                                <div key={index} style={{ marginBottom: '2px' }}>
+                                  • {tooltipItem.label}：{tooltipItem.value.toLocaleString()} 核
+                                </div>
+                              ))}
+                            </div>
+                          }
+                          placement="top"
+                        >
+                          <div style={{
+                            padding: '6px 10px',
+                            backgroundColor: '#fff',
+                            borderRadius: '16px',
+                            border: '1px solid #d9f7be',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            minWidth: 'fit-content'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#f6ffed';
+                            e.target.style.transform = 'scale(1.05)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = '#fff';
+                            e.target.style.transform = 'scale(1)';
+                          }}>
+                            <span style={{
+                              width: '6px',
+                              height: '6px',
+                              borderRadius: '50%',
+                              backgroundColor: item.color
+                            }}></span>
+                            <span style={{ color: '#595959', fontSize: '11px' }}>{item.label}</span>
+                            <span style={{ color: item.color, fontWeight: 'bold', fontSize: '11px' }}>
+                              {item.value.toLocaleString()}核
+                            </span>
+                            <InfoCircleOutlined style={{
+                              fontSize: '10px',
+                              color: '#999',
+                              cursor: 'help',
+                              marginLeft: '2px'
+                            }} />
+                          </div>
+                        </Tooltip>
+                      ) : (
+                        <div style={{
+                          padding: '6px 10px',
+                          backgroundColor: '#fff',
+                          borderRadius: '16px',
+                          border: '1px solid #d9f7be',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          minWidth: 'fit-content'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#f6ffed';
+                          e.target.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#fff';
+                          e.target.style.transform = 'scale(1)';
+                        }}>
+                          <span style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            backgroundColor: item.color
+                          }}></span>
+                          <span style={{ color: '#595959', fontSize: '11px' }}>{item.label}</span>
+                          <span style={{ color: item.color, fontWeight: 'bold', fontSize: '11px' }}>
+                            {item.value.toLocaleString()}核
+                          </span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -770,9 +806,9 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                 icon={<SettingOutlined />}
                 onClick={handleGoToProcurement}
                 style={{
-                  backgroundColor: '#f5222d',
-                  borderColor: '#f5222d',
-                  boxShadow: '0 2px 4px rgba(245, 34, 45, 0.3)'
+                  backgroundColor: '#1890ff',
+                  borderColor: '#1890ff',
+                  boxShadow: '0 2px 4px rgba(24, 144, 255, 0.3)'
                 }}
               >
                 资源筹措
