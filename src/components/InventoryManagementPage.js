@@ -29,7 +29,6 @@ import {
 import ReactECharts from 'echarts-for-react';
 import dayjs from 'dayjs';
 import InventoryFilterPanel from './InventoryFilterPanel';
-import InventoryUsageTrendChart from './InventoryUsageTrendChart';
 import './InventoryManagementPage.css';
 
 const InventoryManagementPage = ({ onNavigateToResourceProcurement }) => {
@@ -59,7 +58,6 @@ const InventoryManagementPage = ({ onNavigateToResourceProcurement }) => {
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('chart');
   const [distributionBy, setDistributionBy] = useState('region');
-  const [usageTrendData, setUsageTrendData] = useState({ labels: [], usageData: [] });
   const [activeTab, setActiveTab] = useState('available');
   const [showDatacenterDetails, setShowDatacenterDetails] = useState(false);
   const [inventoryType, setInventoryType] = useState('all'); // 库存类型：all, outbound, available
@@ -1721,27 +1719,135 @@ const InventoryManagementPage = ({ onNavigateToResourceProcurement }) => {
               label: '库存明细',
               children: (
                 <div>
-                  {/* 库存明细汇总统计 */}
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                    alignItems: 'center',
-                    marginBottom: 16,
-                    gap: '24px',
-                    fontSize: '14px',
-                    fontWeight: 'bold'
-                  }}>
-                    <span style={{ color: '#1890ff' }}>
-                      总库存 ∑ {(11750).toLocaleString()} 核
-                    </span>
-                    <span style={{ color: '#f5222d' }}>
-                      已出库 ∑ {(1750).toLocaleString()} 核
-                    </span>
-                    <span style={{ color: '#52c41a' }}>
-                      可用库存 ∑ {(10000).toLocaleString()} 核
-                    </span>
-                  </div>
-                  <Table
+                  {(() => {
+                    // 库存明细数据
+                    const inventoryDetailData = [
+                      {
+                        key: '1',
+                        clusterGroup: 'hulk-general',
+                        specialZone: 'default',
+                        caller: 'avatar',
+                        inventoryUsage: '业务',
+                        region: '北京',
+                        datacenter: '北京-DC1',
+                        productType: '通用',
+                        outboundInventory: 2800,
+                        availableInventory: 1800
+                      },
+                      {
+                        key: '2',
+                        clusterGroup: 'hulk-general',
+                        specialZone: 'jinrong_hulk',
+                        caller: 'avatarjinrong',
+                        inventoryUsage: '业务',
+                        region: '北京',
+                        datacenter: '北京-DC1',
+                        productType: '高性能',
+                        outboundInventory: 1200,
+                        availableInventory: 800
+                      },
+                      {
+                        key: '3',
+                        clusterGroup: 'hulk-general',
+                        specialZone: 'default',
+                        caller: 'policy',
+                        inventoryUsage: '平台',
+                        region: '上海',
+                        datacenter: '上海-DC1',
+                        productType: '通用',
+                        outboundInventory: 1800,
+                        availableInventory: 1200
+                      },
+                      {
+                        key: '4',
+                        clusterGroup: 'hulk-arm',
+                        specialZone: 'default',
+                        caller: 'hulk_arm',
+                        inventoryUsage: '自用',
+                        region: '怀来',
+                        datacenter: '怀来-DC1',
+                        productType: '经济',
+                        outboundInventory: 1500,
+                        availableInventory: 1000
+                      },
+                      {
+                        key: '5',
+                        clusterGroup: 'txserverless',
+                        specialZone: 'default',
+                        caller: 'policy_txserverless',
+                        inventoryUsage: '平台',
+                        region: '广州',
+                        datacenter: '广州-DC1',
+                        productType: '通用',
+                        outboundInventory: 930,
+                        availableInventory: 620
+                      },
+                      {
+                        key: '6',
+                        clusterGroup: 'hulk-general',
+                        specialZone: 'hulk_holiday',
+                        caller: 'holiday',
+                        inventoryUsage: '业务',
+                        region: '北京',
+                        datacenter: '北京-DC2',
+                        productType: '通用',
+                        outboundInventory: 1400,
+                        availableInventory: 950
+                      },
+                      {
+                        key: '7',
+                        clusterGroup: 'hulk-general',
+                        specialZone: 'huidu_hulk',
+                        caller: 'migration',
+                        inventoryUsage: '运维',
+                        region: '上海',
+                        datacenter: '上海-DC2',
+                        productType: '高性能',
+                        outboundInventory: 1100,
+                        availableInventory: 750
+                      },
+                      {
+                        key: '8',
+                        clusterGroup: 'hulk-arm',
+                        specialZone: 'default',
+                        caller: 'hulk_arm_admin',
+                        inventoryUsage: '自用',
+                        region: '怀来',
+                        datacenter: '怀来-DC2',
+                        productType: '经济',
+                        outboundInventory: 1020,
+                        availableInventory: 680
+                      }
+                    ];
+
+                    // 计算汇总数据
+                    const totalUsedInventory = inventoryDetailData.reduce((sum, item) => sum + item.outboundInventory, 0);
+                    const totalAvailableInventory = inventoryDetailData.reduce((sum, item) => sum + item.availableInventory, 0);
+                    const totalInventory = totalUsedInventory + totalAvailableInventory;
+
+                    return (
+                      <>
+                        {/* 库存明细汇总统计 */}
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          alignItems: 'center',
+                          marginBottom: 16,
+                          gap: '24px',
+                          fontSize: '14px',
+                          fontWeight: 'bold'
+                        }}>
+                          <span style={{ color: '#f5222d' }}>
+                            已使用库存 ∑ {totalUsedInventory.toLocaleString()} 核
+                          </span>
+                          <span style={{ color: '#52c41a' }}>
+                            未使用库存 ∑ {totalAvailableInventory.toLocaleString()} 核
+                          </span>
+                          <span style={{ color: '#1890ff' }}>
+                            总库存 ∑ {totalInventory.toLocaleString()} 核
+                          </span>
+                        </div>
+                        <Table
                   columns={[
                     {
                       title: '集群组',
@@ -1824,7 +1930,7 @@ const InventoryManagementPage = ({ onNavigateToResourceProcurement }) => {
                       onFilter: (value, record) => record.productType === value
                     },
                     {
-                      title: '已出库数量（核）',
+                      title: '已使用库存（核）',
                       dataIndex: 'outboundInventory',
                       key: 'outboundInventory',
                       width: 150,
@@ -1833,7 +1939,7 @@ const InventoryManagementPage = ({ onNavigateToResourceProcurement }) => {
                       sortDirections: ['descend', 'ascend']
                     },
                     {
-                      title: '可用库存数量（核）',
+                      title: '未使用库存（核）',
                       dataIndex: 'availableInventory',
                       key: 'availableInventory',
                       width: 150,
@@ -1841,106 +1947,20 @@ const InventoryManagementPage = ({ onNavigateToResourceProcurement }) => {
                       sorter: (a, b) => a.availableInventory - b.availableInventory,
                       sortDirections: ['descend', 'ascend'],
                       defaultSortOrder: 'descend'
+                    },
+                    {
+                      title: '总库存（核）',
+                      key: 'totalInventory',
+                      width: 150,
+                      render: (_, record) => {
+                        const total = record.outboundInventory + record.availableInventory;
+                        return <span style={{ color: '#1890ff', fontWeight: 'bold' }}>{total.toLocaleString()}</span>;
+                      },
+                      sorter: (a, b) => (a.outboundInventory + a.availableInventory) - (b.outboundInventory + b.availableInventory),
+                      sortDirections: ['descend', 'ascend']
                     }
                   ]}
-                  dataSource={[
-                    {
-                      key: '1',
-                      clusterGroup: 'hulk-general',
-                      specialZone: 'default',
-                      caller: 'avatar',
-                      inventoryUsage: '业务',
-                      region: '北京',
-                      datacenter: '北京-DC1',
-                      productType: '通用',
-                      outboundInventory: 2800,
-                      availableInventory: 1800
-                    },
-                    {
-                      key: '2',
-                      clusterGroup: 'hulk-general',
-                      specialZone: 'jinrong_hulk',
-                      caller: 'avatarjinrong',
-                      inventoryUsage: '业务',
-                      region: '北京',
-                      datacenter: '北京-DC1',
-                      productType: '高性能',
-                      outboundInventory: 1200,
-                      availableInventory: 800
-                    },
-                    {
-                      key: '3',
-                      clusterGroup: 'hulk-general',
-                      specialZone: 'default',
-                      caller: 'policy',
-                      inventoryUsage: '平台',
-                      region: '上海',
-                      datacenter: '上海-DC1',
-                      productType: '通用',
-                      outboundInventory: 1800,
-                      availableInventory: 1200
-                    },
-                    {
-                      key: '4',
-                      clusterGroup: 'hulk-arm',
-                      specialZone: 'default',
-                      caller: 'hulk_arm',
-                      inventoryUsage: '自用',
-                      region: '怀来',
-                      datacenter: '怀来-DC1',
-                      productType: '经济',
-                      outboundInventory: 1500,
-                      availableInventory: 1000
-                    },
-                    {
-                      key: '5',
-                      clusterGroup: 'txserverless',
-                      specialZone: 'default',
-                      caller: 'policy_txserverless',
-                      inventoryUsage: '平台',
-                      region: '广州',
-                      datacenter: '广州-DC1',
-                      productType: '通用',
-                      outboundInventory: 930,
-                      availableInventory: 620
-                    },
-                    {
-                      key: '6',
-                      clusterGroup: 'hulk-general',
-                      specialZone: 'hulk_holiday',
-                      caller: 'holiday',
-                      inventoryUsage: '业务',
-                      region: '北京',
-                      datacenter: '北京-DC2',
-                      productType: '通用',
-                      outboundInventory: 1400,
-                      availableInventory: 950
-                    },
-                    {
-                      key: '7',
-                      clusterGroup: 'hulk-general',
-                      specialZone: 'huidu_hulk',
-                      caller: 'migration',
-                      inventoryUsage: '运维',
-                      region: '上海',
-                      datacenter: '上海-DC2',
-                      productType: '高性能',
-                      outboundInventory: 1100,
-                      availableInventory: 750
-                    },
-                    {
-                      key: '8',
-                      clusterGroup: 'hulk-arm',
-                      specialZone: 'default',
-                      caller: 'hulk_arm_admin',
-                      inventoryUsage: '自用',
-                      region: '怀来',
-                      datacenter: '怀来-DC2',
-                      productType: '经济',
-                      outboundInventory: 1020,
-                      availableInventory: 680
-                    }
-                  ]}
+                  dataSource={inventoryDetailData}
                   size="small"
                   pagination={{
                     total: 50,
@@ -1950,51 +1970,11 @@ const InventoryManagementPage = ({ onNavigateToResourceProcurement }) => {
                     showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条/共 ${total} 条`
                   }}
                 />
+                      </>
+                    );
+                  })()}
                 </div>
               )
-            },
-            {
-              key: 'usage-trend',
-              label: '库存使用趋势',
-              children: (
-                <div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: 16
-                  }}>
-                     <div style={{
-                       fontSize: '14px',
-                       color: '#666'
-                     }}>
-                       展示所有集群/专区/调用方的库存使用情况趋势
-                       {usageTrendData.usageData && usageTrendData.usageData.length > 0 && (
-                         <span style={{ marginLeft: '8px', color: '#1890ff', fontWeight: 'bold' }}>
-                           （当前显示 {usageTrendData.usageData.length} 个集群）
-                         </span>
-                       )}
-                     </div>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px',
-                      fontSize: '12px'
-                    }}>
-                      <Tag color="blue">实线：已使用</Tag>
-                      <Tag color="cyan">菱形：未使用</Tag>
-                      <Tag color="green">实线：历史数据</Tag>
-                      <Tag color="purple">虚线：预测数据</Tag>
-                    </div>
-                  </div>
-                  <div style={{ height: '500px' }}>
-                    <InventoryUsageTrendChart
-                      data={usageTrendData}
-                      filters={filters}
-                    />
-                   </div>
-                 </div>
-               )
             }
           ]}
         />

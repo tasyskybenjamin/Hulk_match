@@ -654,25 +654,28 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                       key: 'business',
                       label: '业务',
                       value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.45),
+                      percentage: 45.0,
                       color: '#1890ff'
                     },
                     {
                       key: 'platform',
                       label: '平台',
                       value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.25),
+                      percentage: 25.0,
                       color: '#52c41a'
                     },
                     {
                       key: 'others',
                       label: '其他',
                       value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * (0.15 + 0.1 + 0.05)),
+                      percentage: 30.0,
                       color: '#722ed1',
                       tooltip: {
                         title: '其他用途包含：',
                         items: [
-                          { label: '自用', value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.15) },
-                          { label: '运维', value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.1) },
-                          { label: '紧急资源池', value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.05) }
+                          { label: '自用', value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.15), percentage: 15.0 },
+                          { label: '运维', value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.1), percentage: 10.0 },
+                          { label: '紧急资源池', value: Math.round((summary.availableInventory.total + summary.statusDistribution.delivered) * 0.05), percentage: 5.0 }
                         ]
                       }
                     }
@@ -719,15 +722,18 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                               backgroundColor: item.color
                             }}></span>
                             <span style={{ color: '#595959', fontSize: '11px' }}>{item.label}</span>
-                            <span style={{ color: item.color, fontWeight: 'bold', fontSize: '11px' }}>
-                              {item.value.toLocaleString()}核
-                            </span>
-                            <InfoCircleOutlined style={{
-                              fontSize: '10px',
-                              color: '#999',
-                              cursor: 'help',
-                              marginLeft: '2px'
-                            }} />
+                             <span style={{ color: item.color, fontWeight: 'bold', fontSize: '11px' }}>
+                               {item.value.toLocaleString()}核
+                             </span>
+                             <span style={{ color: '#8c8c8c', fontSize: '10px', marginLeft: '2px' }}>
+                               ({item.percentage.toFixed(1)}%)
+                             </span>
+                             <InfoCircleOutlined style={{
+                               fontSize: '10px',
+                               color: '#999',
+                               cursor: 'help',
+                               marginLeft: '2px'
+                             }} />
                           </div>
                         </Tooltip>
                       ) : (
@@ -760,6 +766,9 @@ const SupplyDemandSummary = ({ data, filters, onNavigateToResourceProcurement })
                           <span style={{ color: '#595959', fontSize: '11px' }}>{item.label}</span>
                           <span style={{ color: item.color, fontWeight: 'bold', fontSize: '11px' }}>
                             {item.value.toLocaleString()}核
+                          </span>
+                          <span style={{ color: '#8c8c8c', fontSize: '10px', marginLeft: '2px' }}>
+                            ({item.percentage.toFixed(1)}%)
                           </span>
                         </div>
                       )}

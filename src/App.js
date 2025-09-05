@@ -26,6 +26,7 @@ import EditMeasurePage from './components/EditMeasurePage';
 import DemandManagementPage from './components/DemandManagementPage';
 import InventoryManagementPage from './components/InventoryManagementPage';
 import SupplyDemandMatchingPage from './components/SupplyDemandMatchingPage';
+import ResourceUsageTrendPage from './components/ResourceUsageTrendPage';
 import { getResourceData } from './services/dataService';
 import './App.css';
 
@@ -78,6 +79,11 @@ function App() {
           key: 'delivery-management',
           icon: <CloudOutlined />,
           label: '交付/回收管理',
+        },
+        {
+          key: 'resource-usage-trend',
+          icon: <LineChartOutlined />,
+          label: '资源使用趋势',
         },
         {
           key: 'resource-procurement',
@@ -305,6 +311,8 @@ function App() {
                 本页面本期无改动
               </div>
             </div>
+          ) : selectedKey === 'resource-usage-trend' ? (
+            <ResourceUsageTrendPage />
           ) : selectedKey === 'configuration-management' ? (
             <div style={{
               display: 'flex',

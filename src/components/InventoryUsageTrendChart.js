@@ -406,87 +406,76 @@ const InventoryUsageTrendChart = ({ data, filters }) => {
   };
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* 控制按钮 */}
+      <div className="control-buttons">
+        <div style={{ fontSize: '14px', color: '#666' }}>
+          图例控制：
+        </div>
+        <Space size="small">
+          <Button size="small" onClick={handleSelectAll}>
+            全选
+          </Button>
+          <Button size="small" onClick={handleClearAll}>
+            清空
+          </Button>
+          <Button size="small" onClick={handleInvertSelection}>
+            反选
+          </Button>
+        </Space>
+      </div>
+
       {/* 图表 */}
-      <div style={{ height: 'calc(100% - 180px)' }}>
+      <div style={{ flex: 1, minHeight: '300px' }}>
         <ReactECharts
           option={getChartOption()}
           style={{
             width: '100%',
-            height: '100%',
-            minHeight: '350px'
+            height: '100%'
           }}
           onChartReady={onChartReady}
         />
       </div>
 
-      {/* 图例控制区域 */}
+      {/* 紧凑的图例控制区域 */}
       <div style={{
-        height: '180px',
-        padding: '16px 0',
+        marginTop: '12px',
+        padding: '12px',
         borderTop: '1px solid #f0f0f0',
-        backgroundColor: '#fafafa'
+        backgroundColor: '#fafafa',
+        borderRadius: '6px'
       }}>
-        {/* 控制按钮 */}
-        <div style={{ marginBottom: '16px', textAlign: 'center' }}>
-          <Space>
-            <Button size="small" onClick={handleSelectAll}>
-              全选
-            </Button>
-            <Button size="small" onClick={handleClearAll}>
-              清空
-            </Button>
-            <Button size="small" onClick={handleInvertSelection}>
-              反选
-            </Button>
-          </Space>
-        </div>
-
-        {/* 自定义图例 */}
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          gap: '8px 12px',
-          maxHeight: '120px',
-          overflowY: 'auto',
-          padding: '0 16px'
-        }}>
+        {/* 自定义图例 - 更紧凑的布局 */}
+        <div className="legend-grid">
           {getLegendData().map((legend) => (
             <div
               key={legend.name}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                cursor: 'pointer',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                backgroundColor: selectedLegends[legend.name] ? 'rgba(24, 144, 255, 0.1)' : 'transparent',
-                border: selectedLegends[legend.name] ? '1px solid #1890ff' : '1px solid transparent',
-                opacity: selectedLegends[legend.name] ? 1 : 0.5,
-                transition: 'all 0.2s'
-              }}
+              className={`legend-item ${selectedLegends[legend.name] ? 'selected' : 'unselected'}`}
               onClick={() => handleLegendClick(legend.name)}
             >
               <Checkbox
                 checked={selectedLegends[legend.name]}
                 onChange={() => handleLegendClick(legend.name)}
                 style={{ marginRight: '6px' }}
+                size="small"
               />
               <div
                 style={{
-                  width: '12px',
-                  height: '12px',
+                  width: '10px',
+                  height: '10px',
                   backgroundColor: legend.color,
                   marginRight: '6px',
                   borderRadius: legend.symbol === 'circle' ? '50%' : '2px',
-                  transform: legend.symbol === 'diamond' ? 'rotate(45deg)' : 'none'
+                  transform: legend.symbol === 'diamond' ? 'rotate(45deg)' : 'none',
+                  flexShrink: 0
                 }}
               />
               <span style={{
-                fontSize: '12px',
+                fontSize: '11px',
                 color: selectedLegends[legend.name] ? '#333' : '#999',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
               }}>
                 {legend.name}
               </span>
