@@ -197,10 +197,12 @@ const SupplyDemandTrendChart = ({ data, activeTab = 'all', filters }) => {
         formatter: function(params) {
           let result = `${params[0].axisValue}<br/>`;
           params.forEach(param => {
-            const isPast = todayIndex === -1 || param.dataIndex <= todayIndex;
-            const dataType = isPast ? '历史数据' : '预测数据';
-            const displayName = param.seriesName.replace('_forecast', '');
-            result += `${param.marker}${displayName}: ${param.value} 核 (${dataType})<br/>`;
+            if (param.value !== null && param.value !== undefined) {
+              const isPast = todayIndex === -1 || param.dataIndex <= todayIndex;
+              const dataType = isPast ? '历史数据' : '预测数据';
+              const displayName = param.seriesName.replace('_forecast', '');
+              result += `${param.marker}${displayName}: ${param.value.toLocaleString()} 核 (${dataType})<br/>`;
+            }
           });
           return result;
         }

@@ -59,9 +59,11 @@ const DemandTrendChart = ({ data, disableAnomalyClick = false }) => {
         formatter: function(params) {
           let result = `${params[0].axisValue}<br/>`;
           params.forEach(param => {
-            const isPast = todayIndex === -1 || param.dataIndex <= todayIndex;
-            const dataType = isPast ? '历史数据' : '预测数据';
-            result += `${param.marker}${param.seriesName}: ${param.value} (${dataType})<br/>`;
+            if (param.value !== null && param.value !== undefined) {
+              const isPast = todayIndex === -1 || param.dataIndex <= todayIndex;
+              const dataType = isPast ? '历史数据' : '预测数据';
+              result += `${param.marker}${param.seriesName}: ${param.value.toLocaleString()} (${dataType})<br/>`;
+            }
           });
           return result;
         }
@@ -215,7 +217,9 @@ const DemandTrendChart = ({ data, disableAnomalyClick = false }) => {
           },
           tooltip: {
             formatter: function(params) {
-              return `异常点<br/>时间: ${params.value[0]}<br/>需求量: ${params.value[1]}`;
+              const value = params.value[1];
+              const displayValue = (value !== null && value !== undefined) ? value.toLocaleString() : '无数据';
+              return `异常点<br/>时间: ${params.value[0]}<br/>需求量: ${displayValue}`;
             }
           }
         }])

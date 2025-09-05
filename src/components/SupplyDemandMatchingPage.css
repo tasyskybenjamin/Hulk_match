@@ -12,14 +12,16 @@
 .supply-demand-matching-page .filter-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .supply-demand-matching-page .filter-label {
   font-size: 14px;
   font-weight: 500;
   color: #333;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  white-space: nowrap;
 }
 
 .supply-demand-matching-page .ant-select-multiple .ant-select-selection-item {
@@ -43,6 +45,56 @@
   margin-left: 4px;
 }
 
+/* 筛选面板优化 */
+.supply-demand-matching-page .filter-card .ant-card-body {
+  padding: 20px 24px;
+}
+
+.supply-demand-matching-page .ant-cascader,
+.supply-demand-matching-page .ant-select,
+.supply-demand-matching-page .ant-picker {
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.supply-demand-matching-page .ant-cascader:hover,
+.supply-demand-matching-page .ant-select:hover,
+.supply-demand-matching-page .ant-picker:hover {
+  border-color: #40a9ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.supply-demand-matching-page .ant-cascader-focused,
+.supply-demand-matching-page .ant-select-focused,
+.supply-demand-matching-page .ant-picker-focused {
+  border-color: #40a9ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* 已选择条件区域 */
+.supply-demand-matching-page .selected-filters {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.supply-demand-matching-page .selected-filters .ant-tag {
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin: 2px 4px 2px 0;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+.supply-demand-matching-page .selected-filters .ant-tag:hover {
+  border-color: #40a9ff;
+  color: #1890ff;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .supply-demand-matching-page .filter-item {
@@ -51,6 +103,10 @@
 
   .supply-demand-matching-page .ant-col {
     margin-bottom: 8px;
+  }
+
+  .supply-demand-matching-page .filter-card .ant-card-body {
+    padding: 16px;
   }
 }
 

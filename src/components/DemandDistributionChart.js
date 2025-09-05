@@ -94,7 +94,9 @@ const DemandDistributionChart = ({ data, distributionBy, showRoomDetail }) => {
           },
           formatter: function(params) {
             const param = params[0];
-            return `${param.name}<br/>${param.seriesName}: ${param.value}<br/>占比: ${param.data.percentage}%`;
+            const value = (param.value !== null && param.value !== undefined) ? param.value.toLocaleString() : '无数据';
+            const percentage = param.data.percentage || 0;
+            return `${param.name}<br/>${param.seriesName}: ${value}<br/>占比: ${percentage}%`;
           }
         },
         grid: {

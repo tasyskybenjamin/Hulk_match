@@ -47,7 +47,9 @@ const InventoryTrendChart = ({ data }) => {
         intersect: false,
         callbacks: {
           label: function(context) {
-            return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} 核`;
+            const value = context.parsed.y;
+            const displayValue = (value !== null && value !== undefined) ? value.toLocaleString() : '无数据';
+            return `${context.dataset.label}: ${displayValue} 核`;
           }
         }
       }

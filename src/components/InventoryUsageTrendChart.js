@@ -331,9 +331,11 @@ const InventoryUsageTrendChart = ({ data, filters }) => {
         formatter: function(params) {
           let result = `${params[0].axisValue}<br/>`;
           params.forEach(param => {
-            const isPast = todayIndex === -1 || param.dataIndex <= todayIndex;
-            const dataType = isPast ? '历史数据' : '预测数据';
-            result += `${param.marker}${param.seriesName}: ${param.value} 核 (${dataType})<br/>`;
+            if (param.value !== null && param.value !== undefined) {
+              const isPast = todayIndex === -1 || param.dataIndex <= todayIndex;
+              const dataType = isPast ? '历史数据' : '预测数据';
+              result += `${param.marker}${param.seriesName}: ${param.value.toLocaleString()} 核 (${dataType})<br/>`;
+            }
           });
           return result;
         }

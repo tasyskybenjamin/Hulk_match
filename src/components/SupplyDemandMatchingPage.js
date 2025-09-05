@@ -8,7 +8,8 @@ import {
   Button,
   Space,
   Tag,
-  Tabs
+  Tabs,
+  Cascader
 } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -23,12 +24,10 @@ const { Option } = Select;
 const SupplyDemandMatchingPage = ({ onNavigateToResourceProcurement }) => {
   const [filters, setFilters] = useState({
     dateRange: [
-      dayjs().subtract(1, 'month').startOf('day'), // 开始日期 00:00:00
-      dayjs().add(1, 'month').endOf('day').subtract(11, 'seconds') // 结束日期 23:59:49
+      dayjs().startOf('day'), // 当天开始 00:00:00
+      dayjs().add(1, 'month').endOf('day').subtract(11, 'seconds') // 未来1个月结束 23:59:49
     ],
-    clusterGroup: [], // 集群组多选，默认全部选中
-    specialZone: [], // 专区多选
-    caller: [], // 调用方多选
+    clusterCascader: [], // 级联的集群组/专区/调用方选择
     region: [], // 地域/机房多选
     productType: [], // 产品类型多选
     demand: [] // 需求多选
@@ -37,117 +36,122 @@ const SupplyDemandMatchingPage = ({ onNavigateToResourceProcurement }) => {
   const [loading, setLoading] = useState(false);
   const [trendData, setTrendData] = useState(null);
 
-  // 集群组选项
-  const clusterGroupOptions = [
-    { value: 'hulk-general', label: 'hulk-general' },
-    { value: 'hulk-arm', label: 'hulk-arm' },
-    { value: 'txserverless', label: 'txserverless' }
+  // 级联选择器的数据结构：集群组 -> 专区 -> 调用方
+  const clusterCascaderOptions = [
+    {
+      value: 'hulk-general',
+      label: 'hulk-general',
+      children: [
+        {
+          value: 'default',
+          label: 'default',
+          children: [
+            { value: 'avatar', label: 'avatar' },
+            { value: 'policy', label: 'policy' },
+            { value: 'unit_4', label: 'unit_4' }
+          ]
+        },
+        {
+          value: 'hulk_pool_buffer',
+          label: 'hulk_pool_buffer',
+          children: [
+            { value: 'avatar_reserved', label: 'avatar_reserved' },
+            { value: 'migration', label: 'migration' }
+          ]
+        },
+        {
+          value: 'hulk_holiday',
+          label: 'hulk_holiday',
+          children: [
+            { value: 'holiday', label: 'holiday' },
+            { value: 'hulk_holiday_admin', label: 'hulk_holiday_admin' },
+            { value: 'migrate_hulk_holiday', label: 'migrate_hulk_holiday' },
+            { value: 'hulk_holiday', label: 'hulk_holiday' }
+          ]
+        },
+        {
+          value: 'jinrong_hulk',
+          label: '金融专区',
+          children: [
+            { value: 'jinrong', label: 'jinrong' },
+            { value: 'avatarjinrong', label: 'avatarjinrong' },
+            { value: 'migrationjinrong', label: 'migrationjinrong' },
+            { value: 'policy_jinrong_hulk', label: 'policy+jinrong_hulk' }
+          ]
+        },
+        {
+          value: 'huidu_hulk',
+          label: '灰度专区',
+          children: [
+            { value: 'migration', label: 'migration' },
+            { value: 'cargo', label: 'cargo' }
+          ]
+        },
+        {
+          value: 'hrs_non_zone_general',
+          label: 'HRS视野内非专区部分',
+          children: [
+            { value: 'n_plus_one', label: 'n_plus_one' },
+            { value: 'hdr', label: 'hdr' },
+            { value: 'maoyan', label: 'maoyan' }
+          ]
+        }
+      ]
+    },
+    {
+      value: 'hulk-arm',
+      label: 'hulk-arm',
+      children: [
+        {
+          value: 'default',
+          label: 'default',
+          children: [
+            { value: 'avatar', label: 'avatar' },
+            { value: 'policy', label: 'policy' }
+          ]
+        },
+        {
+          value: 'hrs_non_zone_arm',
+          label: 'HRS视野内非专区部分',
+          children: [
+            { value: 'hulk_arm_admin', label: 'hulk_arm_admin' },
+            { value: 'hulk_arm', label: 'hulk_arm' },
+            { value: 'migrate_hulk_arm', label: 'migrate_hulk_arm' }
+          ]
+        }
+      ]
+    },
+    {
+      value: 'txserverless',
+      label: 'txserverless',
+      children: [
+        {
+          value: 'default',
+          label: 'default',
+          children: [
+            { value: 'avatar', label: 'avatar' },
+            { value: 'policy', label: 'policy' }
+          ]
+        },
+        {
+          value: 'hrs_non_zone_serverless',
+          label: 'HRS视野内非专区部分',
+          children: [
+            { value: 'policy_campaign_tx', label: 'policy_campaign_tx' },
+            { value: 'policy_txserverless', label: 'policy+txserverless' },
+            { value: 'txserverless_migration', label: 'txserverless_migration' }
+          ]
+        }
+      ]
+    }
   ];
 
-  // 专区选项（根据集群组动态变化）
-  const getSpecialZoneOptions = (clusterGroups) => {
-    const specialZoneMap = {
-      'hulk-general': [
-        { value: 'default', label: 'default', type: 'zone' },
-        { value: 'hulk_pool_buffer', label: 'hulk_pool_buffer', type: 'zone' },
-        { value: 'hulk_holiday', label: 'hulk_holiday', type: 'zone' },
-        { value: 'jinrong_hulk', label: '金融', type: 'zone' },
-        { value: 'huidu_hulk', label: '灰度专区', type: 'zone' },
-        { value: 'hrs_non_zone_general', label: 'HRS视野内非专区部分', type: 'non-zone' }
-      ],
-      'hulk-arm': [
-        { value: 'default', label: 'default', type: 'zone' },
-        { value: 'hrs_non_zone_arm', label: 'HRS视野内非专区部分', type: 'non-zone' }
-      ],
-      'txserverless': [
-        { value: 'default', label: 'default', type: 'zone' },
-        { value: 'hrs_non_zone_serverless', label: 'HRS视野内非专区部分', type: 'non-zone' }
-      ]
-    };
-
-    if (!clusterGroups || clusterGroups.length === 0) {
-      return [];
-    }
-
-    // 如果选择了多个集群组，合并所有选项
-    const allOptions = [];
-    clusterGroups.forEach(group => {
-      if (specialZoneMap[group]) {
-        allOptions.push(...specialZoneMap[group]);
-      }
-    });
-
-    // 去重
-    const uniqueOptions = allOptions.filter((option, index, self) =>
-      index === self.findIndex(o => o.value === option.value)
-    );
-
-    return uniqueOptions;
-  };
-
-  // 调用方选项（与专区级联）
-  const getCallerOptions = (specialZones) => {
-    const callerMap = {
-      'default': [
-        { value: 'avatar', label: 'avatar' },
-        { value: 'policy', label: 'policy' },
-        { value: 'unit_4', label: 'unit_4' }
-      ],
-      'hulk_pool_buffer': [
-        { value: 'avatar_reserved', label: 'avatar_reserved' },
-        { value: 'migration', label: 'migration' }
-      ],
-      'hulk_holiday': [
-        { value: 'holiday', label: 'holiday' },
-        { value: 'hulk_holiday_admin', label: 'hulk_holiday_admin' },
-        { value: 'migrate_hulk_holiday', label: 'migrate_hulk_holiday' },
-        { value: 'hulk_holiday', label: 'hulk_holiday' }
-      ],
-      'jinrong_hulk': [
-        { value: 'jinrong', label: 'jinrong' },
-        { value: 'avatarjinrong', label: 'avatarjinrong' },
-        { value: 'migrationjinrong', label: 'migrationjinrong' },
-        { value: 'policy_jinrong_hulk', label: 'policy+jinrong_hulk' }
-      ],
-      'huidu_hulk': [
-        { value: 'migration', label: 'migration' },
-        { value: 'cargo', label: 'cargo' }
-      ],
-      'hrs_non_zone_general': [
-        { value: 'n_plus_one', label: 'n_plus_one' },
-        { value: 'hdr', label: 'hdr' },
-        { value: 'maoyan', label: 'maoyan' }
-      ],
-      'hrs_non_zone_arm': [
-        { value: 'hulk_arm_admin', label: 'hulk_arm_admin' },
-        { value: 'hulk_arm', label: 'hulk_arm' },
-        { value: 'migrate_hulk_arm', label: 'migrate_hulk_arm' }
-      ],
-      'hrs_non_zone_serverless': [
-        { value: 'policy_campaign_tx', label: 'policy_campaign_tx' },
-        { value: 'policy_txserverless', label: 'policy+txserverless' },
-        { value: 'txserverless_migration', label: 'txserverless_migration' }
-      ]
-    };
-
-    if (!specialZones || specialZones.length === 0) {
-      return [];
-    }
-
-    // 如果选择了多个专区，合并所有调用方选项
-    const allCallers = [];
-    specialZones.forEach(zone => {
-      if (callerMap[zone]) {
-        allCallers.push(...callerMap[zone]);
-      }
-    });
-
-    // 去重
-    const uniqueCallers = allCallers.filter((caller, index, self) =>
-      index === self.findIndex(c => c.value === caller.value)
-    );
-
-    return uniqueCallers;
+  // 处理级联选择器变化
+  const handleClusterCascaderChange = (value) => {
+    setFilters(prev => ({
+      ...prev,
+      clusterCascader: value
+    }));
   };
 
   // 地域/机房选项
@@ -209,22 +213,10 @@ const SupplyDemandMatchingPage = ({ onNavigateToResourceProcurement }) => {
 
   // 处理筛选条件变化
   const handleFilterChange = (key, value) => {
-    setFilters(prev => {
-      const newFilters = { ...prev, [key]: value };
-
-      // 联动逻辑：当集群组变化时，清空专区和调用方选择
-      if (key === 'clusterGroup') {
-        newFilters.specialZone = [];
-        newFilters.caller = [];
-      }
-
-      // 联动逻辑：当专区变化时，清空调用方选择
-      if (key === 'specialZone') {
-        newFilters.caller = [];
-      }
-
-      return newFilters;
-    });
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
   // 重置筛选条件
@@ -234,9 +226,7 @@ const SupplyDemandMatchingPage = ({ onNavigateToResourceProcurement }) => {
         dayjs().startOf('day'), // 当天开始 00:00:00
         dayjs().add(1, 'month').endOf('day').subtract(11, 'seconds') // 未来1个月结束 23:59:49
       ],
-      clusterGroup: [], // 默认不选中
-      specialZone: [],
-      caller: [],
+      clusterCascader: [], // 默认不选中
       region: [],
       productType: [],
       demand: []
@@ -545,7 +535,7 @@ const SupplyDemandMatchingPage = ({ onNavigateToResourceProcurement }) => {
       {/* 筛选面板 */}
       <Card className="filter-card" size="small" style={{ marginBottom: 16 }}>
         <Row gutter={[16, 16]} align="middle">
-          {/* 第一行：时间范围、集群组、专区、调用方 */}
+          {/* 第一行：时间范围、集群组/专区、地域/机房、产品类型 */}
           <Col xs={24} sm={12} md={6}>
             <div className="filter-item">
               <label className="filter-label">时间范围：</label>
@@ -561,79 +551,28 @@ const SupplyDemandMatchingPage = ({ onNavigateToResourceProcurement }) => {
 
           <Col xs={24} sm={12} md={6}>
             <div className="filter-item">
-              <label className="filter-label">集群组：</label>
-              <Select
-                mode="multiple"
-                value={filters.clusterGroup}
-                onChange={(value) => handleFilterChange('clusterGroup', value)}
-                 placeholder="请选择集群组"
+              <label className="filter-label">集群组/专区：</label>
+              <Cascader
+                options={clusterCascaderOptions}
+                value={filters.clusterCascader}
+                onChange={handleClusterCascaderChange}
+                placeholder="请选择集群组/专区"
                 style={{ width: '100%' }}
                 allowClear
+                showSearch={{
+                  filter: (inputValue, path) =>
+                    path.some(option => option.label.toLowerCase().indexOf(inputValue.toLowerCase()) > -1)
+                }}
+                multiple
                 maxTagCount="responsive"
-              >
-                {clusterGroupOptions.map(option => (
-                  <Option key={option.value} value={option.value}>
-                    {option.label}
-                  </Option>
-                ))}
-              </Select>
+                displayRender={(labels, selectedOptions) => {
+                  if (labels.length === 0) return '';
+                  return labels.join(' / ');
+                }}
+              />
             </div>
           </Col>
 
-          <Col xs={24} sm={12} md={6}>
-            <div className="filter-item">
-              <label className="filter-label">专区：</label>
-              <Select
-                mode="multiple"
-                value={filters.specialZone}
-                onChange={(value) => handleFilterChange('specialZone', value)}
-                placeholder="请选择专区"
-                style={{ width: '100%' }}
-                allowClear
-                maxTagCount="responsive"
-                disabled={!filters.clusterGroup || filters.clusterGroup.length === 0}
-              >
-                {getSpecialZoneOptions(filters.clusterGroup).map(option => (
-                  <Option key={option.value} value={option.value}>
-                    <span style={{ color: option.type === 'non-zone' ? '#666' : 'inherit' }}>
-                      {option.label}
-                      {option.type === 'non-zone' && <span style={{ fontSize: '12px', marginLeft: 4 }}>(非专区)</span>}
-                    </span>
-                  </Option>
-                ))}
-              </Select>
-            </div>
-          </Col>
-
-          <Col xs={24} sm={12} md={6}>
-            <div className="filter-item">
-              <label className="filter-label">调用方：</label>
-              <Select
-                mode="multiple"
-                value={filters.caller}
-                onChange={(value) => handleFilterChange('caller', value)}
-                placeholder="请选择调用方"
-                style={{ width: '100%' }}
-                allowClear
-                showSearch
-                maxTagCount="responsive"
-                disabled={!filters.specialZone || filters.specialZone.length === 0}
-                filterOption={(input, option) =>
-                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }
-              >
-                {getCallerOptions(filters.specialZone).map(option => (
-                  <Option key={option.value} value={option.value}>
-                    {option.label}
-                  </Option>
-                ))}
-              </Select>
-            </div>
-          </Col>
-        </Row>
-
-        <Row gutter={[16, 16]} align="middle" style={{ marginTop: 16 }}>
-          {/* 第二行：地域/机房、产品类型、需求、操作按钮 */}
           <Col xs={24} sm={12} md={6}>
             <div className="filter-item">
               <label className="filter-label">地域/机房：</label>
@@ -672,6 +611,7 @@ const SupplyDemandMatchingPage = ({ onNavigateToResourceProcurement }) => {
             </div>
           </Col>
 
+          {/* 第二行：需求、操作按钮 */}
           <Col xs={24} sm={12} md={6}>
             <div className="filter-item">
               <label className="filter-label">需求：</label>
@@ -693,9 +633,14 @@ const SupplyDemandMatchingPage = ({ onNavigateToResourceProcurement }) => {
             </div>
           </Col>
 
-          {/* 操作按钮 */}
-          <Col xs={24} sm={12} md={6}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <Col xs={24} sm={12} md={18}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '8px',
+              height: '32px',
+              alignItems: 'center'
+            }}>
               <Button
                 icon={<ReloadOutlined />}
                 onClick={handleReset}
@@ -716,37 +661,24 @@ const SupplyDemandMatchingPage = ({ onNavigateToResourceProcurement }) => {
         </Row>
 
         {/* 已选择的筛选条件展示 */}
-        {(filters.clusterGroup.length > 0 || filters.specialZone.length > 0 || filters.caller.length > 0 ||
+        {(filters.clusterCascader.length > 0 ||
           filters.region.length > 0 || filters.productType.length > 0 || filters.demand.length > 0) && (
-          <div style={{ marginTop: 16, padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
+          <div className="selected-filters">
             <div style={{ marginBottom: 8, fontSize: '14px', fontWeight: 500, color: '#666' }}>已选择的筛选条件：</div>
             <Space wrap>
-              {filters.clusterGroup.length > 0 && (
+              {filters.clusterCascader.length > 0 && (
                 <div>
-                  <span style={{ fontSize: '12px', color: '#666', marginRight: 4 }}>集群组：</span>
-                  {filters.clusterGroup.map(group => (
-                    <Tag key={group} closable onClose={() => handleFilterChange('clusterGroup', filters.clusterGroup.filter(g => g !== group))}>
-                      {clusterGroupOptions.find(opt => opt.value === group)?.label || group}
-                    </Tag>
-                  ))}
-                </div>
-              )}
-              {filters.specialZone.length > 0 && (
-                <div>
-                  <span style={{ fontSize: '12px', color: '#666', marginRight: 4 }}>专区：</span>
-                  {filters.specialZone.map(zone => (
-                    <Tag key={zone} closable onClose={() => handleFilterChange('specialZone', filters.specialZone.filter(z => z !== zone))}>
-                      {getSpecialZoneOptions(filters.clusterGroup).find(opt => opt.value === zone)?.label || zone}
-                    </Tag>
-                  ))}
-                </div>
-              )}
-              {filters.caller.length > 0 && (
-                <div>
-                  <span style={{ fontSize: '12px', color: '#666', marginRight: 4 }}>调用方：</span>
-                  {filters.caller.map(caller => (
-                    <Tag key={caller} closable onClose={() => handleFilterChange('caller', filters.caller.filter(c => c !== caller))}>
-                      {getCallerOptions(filters.specialZone).find(opt => opt.value === caller)?.label || caller}
+                  <span style={{ fontSize: '12px', color: '#666', marginRight: 4 }}>集群组/专区：</span>
+                  {filters.clusterCascader.map((cascaderPath, index) => (
+                    <Tag
+                      key={index}
+                      closable
+                      onClose={() => {
+                        const newCascaderValues = filters.clusterCascader.filter((_, i) => i !== index);
+                        handleClusterCascaderChange(newCascaderValues);
+                      }}
+                    >
+                      {cascaderPath.join(' / ')}
                     </Tag>
                   ))}
                 </div>

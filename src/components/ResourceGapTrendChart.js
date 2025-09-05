@@ -217,12 +217,14 @@ const ResourceGapTrendChart = ({ data, activeTab = 'all', filters }) => {
         formatter: function(params) {
           let result = `${params[0].axisValue}<br/>`;
           params.forEach(param => {
-            if (param.value > 0) {
-              const isPast = todayIndex === -1 || param.dataIndex <= todayIndex;
-              const dataType = isPast ? '历史数据' : '预测数据';
-              result += `${param.marker}${param.seriesName}: ${param.value} 核 (${dataType})<br/>`;
-            } else {
-              result += `${param.marker}${param.seriesName}: 无缺口<br/>`;
+            if (param.value !== null && param.value !== undefined) {
+              if (param.value > 0) {
+                const isPast = todayIndex === -1 || param.dataIndex <= todayIndex;
+                const dataType = isPast ? '历史数据' : '预测数据';
+                result += `${param.marker}${param.seriesName}: ${param.value.toLocaleString()} 核 (${dataType})<br/>`;
+              } else {
+                result += `${param.marker}${param.seriesName}: 无缺口<br/>`;
+              }
             }
           });
           return result;
